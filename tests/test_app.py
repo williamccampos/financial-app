@@ -575,3 +575,89 @@ class FinancialAppIntegrationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FamiliaTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.db_path = os.path.join(self.temp_dir.name, "test.db")
+        os.environ["SECRET_KEY"] = "test-secret-key"
+
+        import app.config as config
+        import app.database as database
+        config.DB_PATH = self.db_path
+        database.DB_PATH = self.db_path
+
+        from app import create_app
+        flask_app = create_app()
+        flask_app.config["TESTING"] = True
+        flask_app.secret_key = "test-secret-key"
+        self.flask_app = flask_app
+        self.client = flask_app.test_client()
+
+        # Create user 1
+        self.client.post("/cadastro", data={"name": "User1", "email": "user1@test.com", "password": "SenhaForte123", "password_confirm": "SenhaForte123"})
+        self.client.post("/login", data={"email": "user1@test.com", "password": "SenhaForte123"})
+        self.client.get("/dashboard")
+        with self.client.session_transaction() as sess:
+            self.csrf1 = sess.get("csrf_token")
+            self.user1_id = sess.get("user_id")
+
+        # Create user 2
+        self.client2 = flask_app.test_client()
+        self.client2.post("/cadastro", data={"name": "User2", "email": "user2@test.com", "password": "SenhaForte123", "password_confirm": "SenhaForte123"})
+        self.client2.post("/login", data={"email": "user2@test.com", "password": "SenhaForte123"})
+        self.client2.get("/dashboard")
+        with self.client2.session_transaction() as sess:
+            self.csrf2 = sess.get("csrf_token")
+            self.user2_id = sess.get("user_id")
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _h(self, csrf):
+        return {"Content-Type": "application/json", "X-CSRF-Token": csrf}
+
+    def test_membros_sem_familia(self):
+        resp = self.client.get("/api/familia/membros")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json["membros"], [])
+
+    def test_resumo_sem_familia(self):
+        resp = self.client.get("/api/familia/resumo")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_familia_com_compartilhamento_escrita(self):
+        # User1 shares with User2 (escrita)
+        self.client.post("/api/compartilhar", json={"email": "user2@test.com", "permissao": "escrita"}, headers=self._h(self.csrf1))
+
+        # Add lancamento for user1
+        self.client.post("/lancamento", json={"data": "2026-05-01", "tipo": "saida", "descricao": "Mercado", "valor": 200}, headers=self._h(self.csrf1))
+        # Add lancamento for user2
+        self.client2.post("/lancamento", json={"data": "2026-05-01", "tipo": "saida", "descricao": "Farmácia", "valor": 50}, headers=self._h(self.csrf2))
+
+        # User2 should see family
+        resp = self.client2.get("/api/familia/membros")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json["membros"]), 2)
+
+        # Resumo
+        resp = self.client2.get("/api/familia/resumo?mes=2026-05")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json["total_saidas"], 250.0)
+
+    def test_familia_gastos_categoria(self):
+        self.client.post("/api/compartilhar", json={"email": "user2@test.com", "permissao": "escrita"}, headers=self._h(self.csrf1))
+        self.client.post("/lancamento", json={"data": "2026-05-01", "tipo": "saida", "descricao": "Mercado", "valor": 100, "categoria": "Alimentação"}, headers=self._h(self.csrf1))
+        self.client2.post("/lancamento", json={"data": "2026-05-01", "tipo": "saida", "descricao": "Restaurante", "valor": 80, "categoria": "Alimentação"}, headers=self._h(self.csrf2))
+
+        resp = self.client.get("/api/familia/gastos-categoria?mes=2026-05")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json["categorias"][0]["categoria"], "Alimentação")
+        self.assertEqual(resp.json["categorias"][0]["total"], 180.0)
+
+    def test_leitura_nao_cria_familia(self):
+        # Compartilhamento com leitura não deve criar família
+        self.client.post("/api/compartilhar", json={"email": "user2@test.com", "permissao": "leitura"}, headers=self._h(self.csrf1))
+        resp = self.client2.get("/api/familia/membros")
+        self.assertEqual(resp.json["membros"], [])

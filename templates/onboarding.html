@@ -6,17 +6,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bem-vindo • FinanZen</title>
   <link rel="icon" href="{{ url_for('static', filename='brand/favicon-finanzen.svg') }}" type="image/svg+xml" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <style>
     .onboarding { max-width: 520px; margin: 2rem auto; padding: 0 1rem; }
-    .onboarding h1 { text-align: center; margin-bottom: 0.5rem; }
-    .onboarding .subtitle { text-align: center; opacity: 0.7; margin-bottom: 2rem; }
+    .onboarding h1 { text-align: center; margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+    .onboarding .subtitle { text-align: center; color: var(--text-tertiary); margin-bottom: 2rem; }
     .step { display: none; }
     .step.active { display: block; }
     .step-indicator { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--glass-border); transition: background 0.3s; }
-    .step-dot.active { background: var(--accent); }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--glass-border); transition: background var(--duration-normal) var(--ease-spring); }
+    .step-dot.active { background: var(--accent); box-shadow: 0 0 6px rgba(0, 122, 255, 0.3); }
+    .step-hint { color: var(--text-tertiary); font-size: 0.875rem; margin: 0.25rem 0 1rem; }
     .contas-fixas-list, .orcamentos-list { display: flex; flex-direction: column; gap: 0.75rem; }
     .conta-fixa-row, .orcamento-row { display: grid; grid-template-columns: 1fr 120px; gap: 0.5rem; }
     .conta-fixa-row input,
@@ -54,8 +54,10 @@
       background-repeat: no-repeat;
     }
     .onboarding-actions { display: flex; justify-content: space-between; margin-top: 1.5rem; }
-    .btn-add { background: none; border: 1px dashed var(--glass-border); padding: 0.5rem; border-radius: var(--radius-md); cursor: pointer; color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem; width: 100%; }
-    .btn-skip { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.9rem; }
+    .btn-add { background: none; border: 0.5px dashed var(--glass-border); padding: 0.5rem; border-radius: var(--radius-md); cursor: pointer; color: var(--accent); font-size: 0.85rem; font-weight: 600; margin-top: 0.5rem; width: 100%; transition: all var(--duration-fast) var(--ease-spring); }
+    .btn-add:hover { background: rgba(0, 122, 255, 0.06); border-color: var(--accent); }
+    .btn-skip { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: color var(--duration-fast); }
+    .btn-skip:hover { color: var(--text-primary); }
   </style>
 </head>
 <body>
@@ -74,7 +76,7 @@
         <!-- Passo 1: Renda -->
         <section class="step active glass-card section-block" data-step="1">
           <h2>💰 Qual sua renda mensal?</h2>
-          <p style="opacity:0.7;font-size:0.9rem;">Isso nos ajuda a calcular sua taxa de poupança.</p>
+          <p class="step-hint">Isso nos ajuda a calcular sua taxa de poupança.</p>
           <div class="campo-form">
             <label for="renda">Renda líquida (R$)</label>
             <input type="number" id="renda" min="0" step="0.01" placeholder="5000.00" />
@@ -88,7 +90,7 @@
         <!-- Passo 2: Contas fixas -->
         <section class="step glass-card section-block" data-step="2">
           <h2>🏠 Quais suas contas fixas?</h2>
-          <p style="opacity:0.7;font-size:0.9rem;">Aluguel, internet, luz... Adicionamos como recorrentes.</p>
+          <p class="step-hint">Aluguel, internet, luz... Adicionamos como recorrentes.</p>
           <div class="contas-fixas-list" id="contas-fixas-list">
             <div class="conta-fixa-row">
               <input type="text" placeholder="Ex: Aluguel" class="cf-nome" />
@@ -105,7 +107,7 @@
         <!-- Passo 3: Orçamentos -->
         <section class="step glass-card section-block" data-step="3">
           <h2>📊 Defina seus orçamentos</h2>
-          <p style="opacity:0.7;font-size:0.9rem;">Quanto quer gastar por categoria este mês?</p>
+          <p class="step-hint">Quanto quer gastar por categoria este mês?</p>
           <div class="orcamentos-list" id="orcamentos-list">
             <div class="orcamento-row">
               <select class="orc-cat">
