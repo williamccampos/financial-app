@@ -3,19 +3,23 @@
   <desc id="desc">Símbolo circular com gráfico financeiro e nome FinanZen.</desc>
   <defs>
     <linearGradient id="g1" x1="4" y1="4" x2="52" y2="52" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#27D37C"/>
-      <stop offset="1" stop-color="#0A84FF"/>
+      <stop stop-color="#34d399"/>
+      <stop offset="1" stop-color="#0a84ff"/>
     </linearGradient>
-    <linearGradient id="g2" x1="64" y1="12" x2="216" y2="44" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#EAF2FF"/>
-      <stop offset="1" stop-color="#B8CCFF"/>
+    <linearGradient id="g2" x1="64" y1="16" x2="210" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f0f4ff"/>
+      <stop offset="0.5" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c8d8ff"/>
     </linearGradient>
   </defs>
 
-  <circle cx="28" cy="28" r="24" fill="#101B33"/>
-  <circle cx="28" cy="28" r="23" stroke="url(#g1)" stroke-width="2"/>
-  <path d="M14 33L22 25L28 30L40 18" stroke="url(#g1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="40" cy="18" r="2.7" fill="#27D37C"/>
+  <!-- Icon circle -->
+  <circle cx="28" cy="28" r="24" fill="#0f172a"/>
+  <circle cx="28" cy="28" r="22.5" stroke="url(#g1)" stroke-width="1.5" opacity="0.8"/>
+  <path d="M14 34L21 26L27 30L40 18" stroke="url(#g1)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="40" cy="18" r="2.5" fill="#34d399"/>
+  <circle cx="14" cy="34" r="1.5" fill="#0a84ff" opacity="0.6"/>
 
-  <text x="64" y="36" fill="url(#g2)" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="30" font-weight="700" letter-spacing="0.4">FinanZen</text>
+  <!-- Text -->
+  <text x="64" y="36" fill="url(#g2)" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5">FinanZen</text>
 </svg>
