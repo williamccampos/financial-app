@@ -69,14 +69,19 @@ def cadastro():
     if password != password_confirm:
         return render_template('register.html', erro='As senhas não conferem.'), 400
 
-    with db_connection() as conn:
-        exists = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
-        if exists:
-            return render_template('register.html', erro='Já existe um usuário com esse email.'), 409
-        conn.execute(
-            "INSERT INTO users (name, nickname, email, password_hash, avatar_url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (name, '', email, generate_password_hash(password), '', datetime.now(UTC).isoformat())
-        )
+    try:
+        with db_connection() as conn:
+            exists = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+            if exists:
+                return render_template('register.html', erro='Já existe um usuário com esse email.'), 409
+            conn.execute(
+                "INSERT INTO users (name, nickname, email, password_hash, avatar_url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (name, '', email, generate_password_hash(password), '', datetime.now(UTC).isoformat())
+            )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return render_template('register.html', erro=f'Erro interno: {e}'), 500
 
     return render_template('register.html', sucesso='Cadastro realizado com sucesso. Faça login.', redirect_to=url_for('auth.login'))
 
