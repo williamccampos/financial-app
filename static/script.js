@@ -3,6 +3,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const html = document.documentElement;
   const body = document.body;
   const dados = body?.dataset?.dados ? JSON.parse(body.dataset.dados) : [];
+
+  // ── Pull-to-refresh (mobile) ──
+  let pullStartY = 0;
+  let pulling = false;
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY === 0) { pullStartY = e.touches[0].clientY; pulling = true; }
+  });
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const diff = e.touches[0].clientY - pullStartY;
+    if (diff > 120) { pulling = false; window.location.reload(); }
+  });
+  document.addEventListener('touchend', () => { pulling = false; });
   const savedTheme = localStorage.getItem('theme');
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   const avatarTrigger = document.getElementById('avatar-trigger');

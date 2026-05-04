@@ -1012,19 +1012,66 @@ select:focus-visible,
 }
 
 @media (max-width: 560px) {
-  .app-shell { width: min(1120px, 100% - 0.75rem); margin-top: 0.5rem; }
+  .app-shell { width: min(1120px, 100% - 0.75rem); margin-top: 0.5rem; margin-bottom: 4.5rem; }
   .glass-container { padding: 0.85rem; border-radius: 16px; }
   .formulario { grid-template-columns: 1fr; }
-  .valor-boxes { grid-template-columns: 1fr; }
-  .valor-box { padding: 0.75rem; }
+  .valor-boxes { grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; padding-bottom: 0.25rem; }
+  .valor-box { padding: 0.75rem; scroll-snap-align: start; min-width: 0; }
   :root { --field-height: 42px; --field-font-size: 0.875rem; }
-  .fab-novo { display: inline-flex; align-items: center; justify-content: center; }
+  .fab-novo { display: inline-flex; align-items: center; justify-content: center; bottom: 5.5rem; }
   #busca-lancamentos { max-width: 100%; }
   .graficos-grid { grid-template-columns: 1fr; }
   .chart-wrap { height: 200px; }
   #form-perfil { grid-template-columns: 1fr; }
-  .top-tabs { gap: 1px; padding: 2px; }
+  .top-tabs { display: none; }
+  .bottom-nav { display: flex; }
+  .global-header { grid-template-columns: 1fr auto; }
+  .global-brand { justify-self: start; }
   .top-tab { font-size: 0.75rem; padding: 0.35rem 0.6rem; }
+}
+
+/* ── Bottom Navigation ── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--glass-bg-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 0.5px solid var(--glass-border-subtle);
+  padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+  justify-content: space-around;
+  align-items: center;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  text-decoration: none;
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-md);
+  transition: color var(--duration-fast);
+}
+
+.bottom-nav-item.is-active {
+  color: var(--accent);
+}
+
+.bottom-nav-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.bottom-nav-label {
+  line-height: 1;
 }
 
 /* ── Reduced motion ── */

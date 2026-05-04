@@ -628,6 +628,19 @@
     </main>
   </div>
 
+  <!-- Bottom Navigation (mobile) -->
+  <nav class="bottom-nav" aria-label="Navegação mobile">
+    <a href="/dashboard" class="bottom-nav-item {{ 'is-active' if active_tab == 'dashboard' else '' }}">
+      <span class="bottom-nav-icon">📊</span><span class="bottom-nav-label">Dashboard</span>
+    </a>
+    <a href="/lancamentos" class="bottom-nav-item {{ 'is-active' if active_tab == 'lancamentos' else '' }}">
+      <span class="bottom-nav-icon">💸</span><span class="bottom-nav-label">Lançamentos</span>
+    </a>
+    <a href="/relatorios" class="bottom-nav-item {{ 'is-active' if active_tab == 'relatorios' else '' }}">
+      <span class="bottom-nav-icon">📈</span><span class="bottom-nav-label">Relatórios</span>
+    </a>
+  </nav>
+
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script src="{{ url_for('static', filename='form.js') }}"></script>
   <script src="{{ url_for('static', filename='lancamentos.js') }}"></script>
