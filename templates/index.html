@@ -12,7 +12,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#007aff" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <script src="https://cdn.pluggy.ai/pluggy-connect.js" async></script>
@@ -27,6 +26,7 @@
         <a href="/dashboard" data-tab="dashboard" class="top-tab {{ 'is-active' if active_tab == 'dashboard' else '' }}">Dashboard</a>
         <a href="/lancamentos" data-tab="lancamentos" class="top-tab {{ 'is-active' if active_tab == 'lancamentos' else '' }}">Lançamentos</a>
         <a href="/relatorios" data-tab="relatorios" class="top-tab {{ 'is-active' if active_tab == 'relatorios' else '' }}">Relatórios</a>
+        <a href="/familia" data-tab="familia" class="top-tab {{ 'is-active' if active_tab == 'familia' else '' }}">Família</a>
       </nav>
       <div class="header-acoes">
         <button id="toggle-theme" class="botao-tema botao-tema--icon" aria-label="Alternar tema de cores" aria-pressed="false">🌙</button>
@@ -398,6 +398,19 @@
       </section>
       {% endif %}
 
+      {% if active_tab == 'familia' %}
+      <section class="glass-card section-block" id="familia-section">
+        <div class="section-head-inline">
+          <h2>👨‍👩‍👧‍👦 Visão Familiar</h2>
+          <p>Gastos consolidados de todos os membros da família.</p>
+        </div>
+        <div id="familia-membros" class="familia-membros"></div>
+        <div id="familia-resumo" class="familia-resumo"></div>
+        <div class="chart-wrap"><canvas id="graficoFamilia" aria-label="Gastos por membro da família" role="img"></canvas></div>
+        <div id="familia-categorias" class="familia-categorias"></div>
+      </section>
+      {% endif %}
+
       <section id="modal-edicao" class="modal" aria-hidden="true" role="dialog" aria-labelledby="modal-title" aria-modal="true">
         <div class="modal__backdrop" data-close-modal="true"></div>
         <div class="modal__content glass-card">
@@ -639,10 +652,14 @@
     <a href="/relatorios" class="bottom-nav-item {{ 'is-active' if active_tab == 'relatorios' else '' }}">
       <span class="bottom-nav-icon">📈</span><span class="bottom-nav-label">Relatórios</span>
     </a>
+    <a href="/familia" class="bottom-nav-item {{ 'is-active' if active_tab == 'familia' else '' }}">
+      <span class="bottom-nav-icon">👨‍👩‍👧‍👦</span><span class="bottom-nav-label">Família</span>
+    </a>
   </nav>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script src="{{ url_for('static', filename='form.js') }}"></script>
   <script src="{{ url_for('static', filename='lancamentos.js') }}"></script>
+  <script src="{{ url_for('static', filename='familia.js') }}"></script>
 </body>
 </html>
