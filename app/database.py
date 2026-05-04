@@ -5,13 +5,10 @@ from app.config import DATABASE_URL, DB_TYPE, DB_PATH
 _pg_pool = None
 
 
-def _get_pg_pool():
-    global _pg_pool
-    if _pg_pool is None:
-        import psycopg2.pool
-        url = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-        _pg_pool = psycopg2.pool.SimpleConnectionPool(1, 5, url)
-    return _pg_pool
+def _get_pg_connection():
+    import psycopg2
+    url = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    return psycopg2.connect(url, sslmode='require')
 
 
 class PgCursorWrapper:
@@ -66,8 +63,7 @@ class PgConnectionWrapper:
 @contextmanager
 def db_connection():
     if DB_TYPE == 'postgresql':
-        pool = _get_pg_pool()
-        conn = pool.getconn()
+        conn = _get_pg_connection()
         wrapper = PgConnectionWrapper(conn)
         try:
             yield wrapper
@@ -76,7 +72,7 @@ def db_connection():
             conn.rollback()
             raise
         finally:
-            pool.putconn(conn)
+            conn.close()
     else:
         conn = sqlite3.connect(DB_PATH)
         try:
@@ -90,12 +86,11 @@ def db_connection():
 def raw_connection():
     """Returns the raw DB connection (for pandas read_sql_query)."""
     if DB_TYPE == 'postgresql':
-        pool = _get_pg_pool()
-        conn = pool.getconn()
+        conn = _get_pg_connection()
         try:
             yield conn
         finally:
-            pool.putconn(conn)
+            conn.close()
     else:
         conn = sqlite3.connect(DB_PATH)
         try:
