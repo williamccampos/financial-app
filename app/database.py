@@ -170,6 +170,8 @@ def _init_sqlite(conn):
         conn.execute("ALTER TABLE users ADD COLUMN nickname TEXT DEFAULT ''")
     if 'avatar_url' not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT DEFAULT ''")
+    if 'onboarding_done' not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN onboarding_done INTEGER DEFAULT 0")
     conn.execute('''
         CREATE TABLE IF NOT EXISTS orcamentos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -261,6 +263,7 @@ def _init_postgresql(conn):
             email TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
             avatar_url TEXT DEFAULT '',
+            onboarding_done INTEGER DEFAULT 0,
             created_at TEXT NOT NULL
         )
     ''')
@@ -281,6 +284,7 @@ def _init_postgresql(conn):
         )
     ''')
     conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_done INTEGER DEFAULT 0")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_lancamentos_user_data ON lancamentos(user_id, data)")
     conn.execute('''
         CREATE TABLE IF NOT EXISTS orcamentos (

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bem-vindo • FinanZen</title>
+  <link rel="icon" href="{{ url_for('static', filename='brand/favicon-finanzen.svg') }}" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <style>
+    .onboarding { max-width: 520px; margin: 2rem auto; padding: 0 1rem; }
+    .onboarding h1 { text-align: center; margin-bottom: 0.5rem; }
+    .onboarding .subtitle { text-align: center; opacity: 0.7; margin-bottom: 2rem; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .step-indicator { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--glass-border); transition: background 0.3s; }
+    .step-dot.active { background: var(--accent); }
+    .contas-fixas-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .conta-fixa-row { display: grid; grid-template-columns: 1fr 120px; gap: 0.5rem; }
+    .orcamentos-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .orcamento-row { display: grid; grid-template-columns: 1fr 120px; gap: 0.5rem; }
+    .onboarding-actions { display: flex; justify-content: space-between; margin-top: 1.5rem; }
+    .btn-add { background: none; border: 1px dashed var(--glass-border); padding: 0.5rem; border-radius: 8px; cursor: pointer; color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem; }
+    .btn-skip { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <main class="glass-container" role="main">
+      <div class="onboarding">
+        <h1>👋 Bem-vindo ao FinanZen!</h1>
+        <p class="subtitle">Vamos configurar suas finanças em 3 passos rápidos.</p>
+
+        <div class="step-indicator">
+          <span class="step-dot active" data-step="1"></span>
+          <span class="step-dot" data-step="2"></span>
+          <span class="step-dot" data-step="3"></span>
+        </div>
+
+        <!-- Passo 1: Renda -->
+        <section class="step active glass-card section-block" data-step="1">
+          <h2>💰 Qual sua renda mensal?</h2>
+          <p style="opacity:0.7;font-size:0.9rem;">Isso nos ajuda a calcular sua taxa de poupança.</p>
+          <div class="campo-form">
+            <label for="renda">Renda líquida (R$)</label>
+            <input type="number" id="renda" min="0" step="0.01" placeholder="5000.00" />
+          </div>
+          <div class="onboarding-actions">
+            <button class="btn-skip" onclick="skipOnboarding()">Pular tudo</button>
+            <button class="botao-principal" onclick="nextStep(2)">Próximo →</button>
+          </div>
+        </section>
+
+        <!-- Passo 2: Contas fixas -->
+        <section class="step glass-card section-block" data-step="2">
+          <h2>🏠 Quais suas contas fixas?</h2>
+          <p style="opacity:0.7;font-size:0.9rem;">Aluguel, internet, luz... Adicionamos como recorrentes.</p>
+          <div class="contas-fixas-list" id="contas-fixas-list">
+            <div class="conta-fixa-row">
+              <input type="text" placeholder="Ex: Aluguel" class="cf-nome" />
+              <input type="number" placeholder="Valor" min="0" step="0.01" class="cf-valor" />
+            </div>
+          </div>
+          <button class="btn-add" onclick="addContaFixa()">+ Adicionar conta</button>
+          <div class="onboarding-actions">
+            <button class="btn-skip" onclick="prevStep(1)">← Voltar</button>
+            <button class="botao-principal" onclick="nextStep(3)">Próximo →</button>
+          </div>
+        </section>
+
+        <!-- Passo 3: Orçamentos -->
+        <section class="step glass-card section-block" data-step="3">
+          <h2>📊 Defina seus orçamentos</h2>
+          <p style="opacity:0.7;font-size:0.9rem;">Quanto quer gastar por categoria este mês?</p>
+          <div class="orcamentos-list" id="orcamentos-list">
+            <div class="orcamento-row">
+              <select class="orc-cat">
+                <option value="Alimentação">🍔 Alimentação</option>
+                <option value="Transporte">🚗 Transporte</option>
+                <option value="Lazer">🎮 Lazer</option>
+                <option value="Saúde">💊 Saúde</option>
+                <option value="Educação">📚 Educação</option>
+                <option value="Moradia">🏠 Moradia</option>
+              </select>
+              <input type="number" placeholder="Limite" min="0" step="0.01" class="orc-limite" />
+            </div>
+          </div>
+          <button class="btn-add" onclick="addOrcamento()">+ Adicionar orçamento</button>
+          <div class="onboarding-actions">
+            <button class="btn-skip" onclick="prevStep(2)">← Voltar</button>
+            <button class="botao-principal" id="btn-finalizar" onclick="finalizarOnboarding()">Finalizar ✓</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const csrfToken = '{{ csrf_token }}';
+
+    function nextStep(n) {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.querySelector(`.step[data-step="${n}"]`).classList.add('active');
+      document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+      document.querySelectorAll(`.step-dot[data-step="${n}"]`).forEach(d => d.classList.add('active'));
+      // Also mark previous dots
+      for (let i = 1; i <= n; i++) {
+        document.querySelector(`.step-dot[data-step="${i}"]`)?.classList.add('active');
+      }
+    }
+
+    function prevStep(n) { nextStep(n); }
+
+    function addContaFixa() {
+      const list = document.getElementById('contas-fixas-list');
+      const row = document.createElement('div');
+      row.className = 'conta-fixa-row';
+      row.innerHTML = '<input type="text" placeholder="Ex: Internet" class="cf-nome" /><input type="number" placeholder="Valor" min="0" step="0.01" class="cf-valor" />';
+      list.appendChild(row);
+    }
+
+    function addOrcamento() {
+      const list = document.getElementById('orcamentos-list');
+      const row = document.createElement('div');
+      row.className = 'orcamento-row';
+      row.innerHTML = `<select class="orc-cat">
+        <option value="Alimentação">🍔 Alimentação</option>
+        <option value="Transporte">🚗 Transporte</option>
+        <option value="Lazer">🎮 Lazer</option>
+        <option value="Saúde">💊 Saúde</option>
+        <option value="Educação">📚 Educação</option>
+        <option value="Moradia">🏠 Moradia</option>
+      </select><input type="number" placeholder="Limite" min="0" step="0.01" class="orc-limite" />`;
+      list.appendChild(row);
+    }
+
+    function collectData() {
+      const renda = document.getElementById('renda').value || 0;
+      const contas_fixas = [];
+      document.querySelectorAll('.conta-fixa-row').forEach(row => {
+        const nome = row.querySelector('.cf-nome').value.trim();
+        const valor = row.querySelector('.cf-valor').value;
+        if (nome && valor > 0) contas_fixas.push({ nome, valor });
+      });
+      const orcamentos = [];
+      document.querySelectorAll('.orcamento-row').forEach(row => {
+        const categoria = row.querySelector('.orc-cat').value;
+        const limite = row.querySelector('.orc-limite').value;
+        if (categoria && limite > 0) orcamentos.push({ categoria, limite });
+      });
+      return { renda, contas_fixas, orcamentos };
+    }
+
+    async function finalizarOnboarding() {
+      const btn = document.getElementById('btn-finalizar');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+      const payload = collectData();
+      const res = await fetch('/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Finalizar ✓';
+        alert('Erro ao salvar. Tente novamente.');
+      }
+    }
+
+    function skipOnboarding() {
+      fetch('/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({})
+      }).then(() => { window.location.href = '/dashboard'; });
+    }
+  </script>
+</body>
+</html>
