@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+import sqlite3
 from contextlib import closing
 
 
@@ -11,15 +12,21 @@ class FinancialAppIntegrationTests(unittest.TestCase):
 
         os.environ["SECRET_KEY"] = "test-secret-key"
 
-        import app as financial_app
+        import app.config as config
+        import app.database as database
 
-        financial_app.DB_PATH = self.db_path
-        financial_app.app.config["TESTING"] = True
-        financial_app.app.secret_key = "test-secret-key"
-        financial_app.init_db()
+        config.DB_PATH = self.db_path
+        database.DB_PATH = self.db_path
 
-        self.module = financial_app
-        self.client = financial_app.app.test_client()
+        from app import create_app
+        flask_app = create_app()
+        flask_app.config["TESTING"] = True
+        flask_app.secret_key = "test-secret-key"
+
+        self.flask_app = flask_app
+        self.config = config
+        self.database = database
+        self.client = flask_app.test_client()
 
         self.client.post(
             "/cadastro",
@@ -71,7 +78,7 @@ class FinancialAppIntegrationTests(unittest.TestCase):
         res = self._create_lancamento()
         self.assertEqual(res.status_code, 200)
 
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             row = conn.execute("SELECT id, user_id FROM lancamentos LIMIT 1").fetchone()
             lid = row[0]
             self.assertEqual(row[1], self.user_id)
@@ -101,13 +108,13 @@ class FinancialAppIntegrationTests(unittest.TestCase):
     # ── Autenticação ──
 
     def test_rota_protegida_sem_login(self):
-        other = self.module.app.test_client()
+        other = self.flask_app.test_client()
         res = other.get("/dashboard")
         self.assertEqual(res.status_code, 302)
         self.assertIn("/login", res.location)
 
     def test_login_credenciais_invalidas(self):
-        other = self.module.app.test_client()
+        other = self.flask_app.test_client()
         res = other.post("/login", data={"email": "teste@example.com", "password": "errada"})
         self.assertEqual(res.status_code, 401)
 
@@ -159,7 +166,7 @@ class FinancialAppIntegrationTests(unittest.TestCase):
 
     def test_excluir_sem_csrf_rejeitado(self):
         self._create_lancamento()
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             lid = conn.execute("SELECT id FROM lancamentos LIMIT 1").fetchone()[0]
         res = self.client.delete(f"/excluir/{lid}", headers={"Content-Type": "application/json"})
         self.assertEqual(res.status_code, 403)
@@ -190,15 +197,12 @@ class FinancialAppIntegrationTests(unittest.TestCase):
 
     def test_parcelas_cartao_credito_split(self):
         res = self._create_lancamento(
-            tipo="saida",
-            categoria="Cartão de Crédito",
-            parcelas=3,
-            valor=300.0,
-            descricao="Compra parcelada",
+            tipo="saida", categoria="Cartão de Crédito",
+            parcelas=3, valor=300.0, descricao="Compra parcelada",
         )
         self.assertEqual(res.status_code, 200)
 
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             rows = conn.execute(
                 "SELECT valor, parcela_atual FROM lancamentos WHERE descricao = 'Compra parcelada' ORDER BY parcela_atual"
             ).fetchall()
@@ -212,14 +216,12 @@ class FinancialAppIntegrationTests(unittest.TestCase):
     def test_isolamento_dados_entre_usuarios(self):
         self._create_lancamento(descricao="Dado do user 1")
 
-        other = self.module.app.test_client()
+        other = self.flask_app.test_client()
         other.post(
             "/cadastro",
             data={
-                "name": "Outro",
-                "email": "outro@example.com",
-                "password": "SenhaForte123",
-                "password_confirm": "SenhaForte123",
+                "name": "Outro", "email": "outro@example.com",
+                "password": "SenhaForte123", "password_confirm": "SenhaForte123",
             },
         )
         other.post("/login", data={"email": "outro@example.com", "password": "SenhaForte123"})
@@ -228,14 +230,12 @@ class FinancialAppIntegrationTests(unittest.TestCase):
         with other.session_transaction() as sess:
             csrf2 = sess.get("csrf_token")
 
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             lid = conn.execute("SELECT id FROM lancamentos WHERE descricao = 'Dado do user 1'").fetchone()[0]
 
-        # Outro usuário não pode editar
         res = other.get(f"/editar/{lid}")
         self.assertEqual(res.status_code, 404)
 
-        # Outro usuário não pode excluir
         res = other.delete(f"/excluir/{lid}", headers={"X-CSRF-Token": csrf2})
         self.assertEqual(res.status_code, 404)
 
@@ -277,10 +277,8 @@ class FinancialAppIntegrationTests(unittest.TestCase):
         self.client.post(
             "/cadastro",
             data={
-                "name": "Segundo",
-                "email": "segundo@example.com",
-                "password": "SenhaForte123",
-                "password_confirm": "SenhaForte123",
+                "name": "Segundo", "email": "segundo@example.com",
+                "password": "SenhaForte123", "password_confirm": "SenhaForte123",
             },
         )
         res = self.client.post(
@@ -293,14 +291,15 @@ class FinancialAppIntegrationTests(unittest.TestCase):
     # ── Rate limiting ──
 
     def test_rate_limiting_login(self):
-        other = self.module.app.test_client()
+        from app.utils import LOGIN_ATTEMPTS
+        other = self.flask_app.test_client()
         email = "rate@example.com"
-        self.module.LOGIN_ATTEMPTS.pop(email, None)
+        LOGIN_ATTEMPTS.pop(email, None)
         for _ in range(5):
             other.post("/login", data={"email": email, "password": "errada"})
         res = other.post("/login", data={"email": email, "password": "errada"})
         self.assertEqual(res.status_code, 429)
-        self.module.LOGIN_ATTEMPTS.pop(email, None)
+        LOGIN_ATTEMPTS.pop(email, None)
 
     # ── Orçamentos ──
 
@@ -310,7 +309,7 @@ class FinancialAppIntegrationTests(unittest.TestCase):
         }, headers=self._headers())
         self.assertEqual(res.status_code, 200)
 
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             row = conn.execute("SELECT id, categoria, limite FROM orcamentos WHERE user_id = ?", (self.user_id,)).fetchone()
             self.assertIsNotNone(row)
             self.assertEqual(row[1], "Alimentação")
@@ -340,22 +339,20 @@ class FinancialAppIntegrationTests(unittest.TestCase):
         }, headers=self._headers())
         self.assertEqual(res.status_code, 200)
 
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             row = conn.execute("SELECT id, nome, valor_alvo, valor_atual, concluida FROM metas WHERE user_id = ?", (self.user_id,)).fetchone()
             self.assertIsNotNone(row)
             meta_id = row[0]
             self.assertEqual(row[1], "Viagem")
             self.assertAlmostEqual(row[3], 0.0)
 
-        # Depositar
         res = self.client.post(f"/meta/{meta_id}", json={"valor_deposito": 2000}, headers=self._headers())
         self.assertEqual(res.status_code, 200)
 
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             row = conn.execute("SELECT valor_atual FROM metas WHERE id = ?", (meta_id,)).fetchone()
             self.assertAlmostEqual(row[0], 2000.0)
 
-        # Excluir
         res = self.client.delete(f"/meta/{meta_id}", headers={"X-CSRF-Token": self.csrf})
         self.assertEqual(res.status_code, 200)
 
@@ -364,12 +361,12 @@ class FinancialAppIntegrationTests(unittest.TestCase):
             "nome": "Pequena", "valor_alvo": 100, "prazo": ""
         }, headers=self._headers())
 
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             meta_id = conn.execute("SELECT id FROM metas WHERE user_id = ? AND nome = 'Pequena'", (self.user_id,)).fetchone()[0]
 
         self.client.post(f"/meta/{meta_id}", json={"valor_deposito": 150}, headers=self._headers())
 
-        with closing(self.module.sqlite3.connect(self.db_path)) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn:
             row = conn.execute("SELECT concluida FROM metas WHERE id = ?", (meta_id,)).fetchone()
             self.assertEqual(row[0], 1)
 
@@ -383,22 +380,16 @@ class FinancialAppIntegrationTests(unittest.TestCase):
 
     def test_gerar_recorrentes(self):
         self._create_lancamento(descricao="Aluguel", tipo="conta", recorrente=True, valor=1500, categoria="Moradia")
-
         res = self.client.post("/gerar-recorrentes", headers={"X-CSRF-Token": self.csrf})
         self.assertEqual(res.status_code, 200)
         data = res.get_json()
-        # Pode ser 0 se já existe no mês atual (o lançamento criado acima já é do mês)
         self.assertIn("gerados", data)
 
     def test_recorrentes_nao_duplica(self):
-        # Criar recorrente no mês anterior para forçar geração
         self._create_lancamento(descricao="Internet", tipo="conta", recorrente=True, valor=100, categoria="Moradia", data="2026-04-01")
-
         r1 = self.client.post("/gerar-recorrentes", headers={"X-CSRF-Token": self.csrf})
         gerados1 = r1.get_json()["gerados"]
         self.assertEqual(gerados1, 1)
-
-        # Segunda chamada não deve duplicar
         r2 = self.client.post("/gerar-recorrentes", headers={"X-CSRF-Token": self.csrf})
         self.assertEqual(r2.get_json()["gerados"], 0)
 
@@ -407,7 +398,6 @@ class FinancialAppIntegrationTests(unittest.TestCase):
     def test_dashboard_inclui_orcamentos_e_metas(self):
         self.client.post("/orcamento", json={"categoria": "Lazer", "limite": 300, "mes": "2026-05"}, headers=self._headers())
         self.client.post("/meta", json={"nome": "Carro", "valor_alvo": 50000}, headers=self._headers())
-
         html = self.client.get("/dashboard").data.decode()
         self.assertIn("Orçamentos do mês", html)
         self.assertIn("Metas financeiras", html)
@@ -473,7 +463,6 @@ class FinancialAppIntegrationTests(unittest.TestCase):
             "nome": "Nubank", "emoji": "💜", "tipo": "corrente", "saldo_inicial": 1000
         }, headers=self._headers())
         self.assertEqual(res.status_code, 200)
-
         contas = self.client.get("/api/contas").get_json()
         self.assertTrue(any(c["nome"] == "Nubank" for c in contas))
         nubank = next(c for c in contas if c["nome"] == "Nubank")
@@ -510,20 +499,15 @@ class FinancialAppIntegrationTests(unittest.TestCase):
     # ── Compartilhamento ──
 
     def test_compartilhar_e_listar(self):
-        # Criar segundo usuário
-        other = self.module.app.test_client()
+        other = self.flask_app.test_client()
         other.post("/cadastro", data={"name": "Parceiro", "email": "parceiro@test.com", "password": "SenhaForte123", "password_confirm": "SenhaForte123"})
-
         res = self.client.post("/api/compartilhar", json={
             "email": "parceiro@test.com", "permissao": "leitura"
         }, headers=self._headers())
         self.assertEqual(res.status_code, 200)
-
         lista = self.client.get("/api/compartilhamentos").get_json()
         self.assertEqual(len(lista["compartilhados"]), 1)
         self.assertEqual(lista["compartilhados"][0]["email"], "parceiro@test.com")
-
-        # Remover
         sid = lista["compartilhados"][0]["id"]
         res = self.client.delete(f"/api/compartilhar/{sid}", headers={"X-CSRF-Token": self.csrf})
         self.assertEqual(res.status_code, 200)
