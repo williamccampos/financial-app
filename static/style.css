@@ -35,7 +35,7 @@
 
   /* Light theme — Liquid Glass */
   --bg-base: #f2f2f7;
-  --bg-gradient: linear-gradient(160deg, #e8ecf4 0%, #f2f2f7 40%, #fafbfe 100%);
+  --bg-gradient: linear-gradient(145deg, #e3eaf5 0%, #f0f2f7 30%, #f8f4ff 60%, #f2f7f5 100%);
   --text-primary: #1c1c1e;
   --text-secondary: #3a3a3c;
   --text-tertiary: #636366;
@@ -72,7 +72,7 @@
 
 [data-theme="dark"] {
   --bg-base: #000000;
-  --bg-gradient: linear-gradient(160deg, #0a0a0f 0%, #111118 40%, #1c1c24 100%);
+  --bg-gradient: linear-gradient(145deg, #0a0a14 0%, #0f1020 30%, #141022 60%, #0a1418 100%);
   --text-primary: #f5f5f7;
   --text-secondary: #d1d1d6;
   --text-tertiary: #8e8e93;
@@ -415,10 +415,11 @@ body {
 
 .campo-form label,
 .checkbox-form label {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: -0.01em;
+  margin-bottom: 0.25rem;
 }
 
 .formulario input,
@@ -431,8 +432,8 @@ body {
   font-size: var(--field-font-size);
   font-family: var(--font-main);
   line-height: 1.2;
-  border: 0.5px solid var(--glass-border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: var(--radius-lg);
   background: var(--glass-bg-elevated);
   transition: all var(--duration-normal) var(--ease-spring);
   color: var(--text-primary);
@@ -471,9 +472,10 @@ body {
   font-family: var(--font-main);
   min-height: var(--field-height);
   height: var(--field-height);
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+  padding: 0 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 122, 255, 0.3);
   grid-column: span 2;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   color: white;
   transition: all var(--duration-normal) var(--ease-spring);
   letter-spacing: -0.01em;
@@ -481,12 +483,13 @@ body {
 
 .botao-principal:hover {
   background: var(--accent-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.35);
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
 }
 
 .botao-principal:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  box-shadow: 0 1px 4px rgba(0, 122, 255, 0.2);
 }
 
 .checkbox-form input[type="checkbox"] {

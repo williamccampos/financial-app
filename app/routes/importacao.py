@@ -44,3 +44,39 @@ def importar_csv():
     except Exception as e:
         return erro_json(f'Erro ao processar: {str(e)}', 400)
     return jsonify({'status': 'ok', 'importados': count})
+
+
+@bp.route('/importar/ofx', methods=['POST'])
+@login_required
+def importar_ofx():
+    if not validar_csrf():
+        return erro_json('CSRF inválido.', 403)
+    file = request.files.get('arquivo')
+    if not file or not file.filename:
+        return erro_json('Arquivo é obrigatório.', 400)
+    if not file.filename.lower().endswith('.ofx'):
+        return erro_json('Apenas arquivos OFX são aceitos.', 400)
+    conta_id = request.form.get('conta_id') or None
+    user_id = get_current_user_id()
+    try:
+        from ofxparse import OfxParser
+        content = file.read()
+        ofx = OfxParser.parse(io.BytesIO(content))
+        count = 0
+        with db_connection() as conn:
+            for account in ofx.accounts:
+                for tx in account.statement.transactions:
+                    valor = abs(float(tx.amount))
+                    if valor == 0:
+                        continue
+                    tipo = 'entrada' if float(tx.amount) > 0 else 'saida'
+                    data_val = tx.date.strftime('%Y-%m-%d')
+                    descricao = (tx.memo or tx.payee or tx.type or 'Transação OFX').strip()
+                    conn.execute("INSERT INTO lancamentos (user_id, data, tipo, descricao, valor, categoria, vencimento, recorrente, parcelas, parcela_atual, conta_id) VALUES (?,?,?,?,?,?,'',0,1,1,?)",
+                        (user_id, data_val, tipo, descricao, valor, '', conta_id))
+                    count += 1
+    except ImportError:
+        return erro_json('Módulo ofxparse não disponível.', 500)
+    except Exception as e:
+        return erro_json(f'Erro ao processar OFX: {str(e)}', 400)
+    return jsonify({'status': 'ok', 'importados': count})
