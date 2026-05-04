@@ -120,12 +120,13 @@ def perfil():
     if avatar_file and avatar_file.filename:
         if not ext_permitida(avatar_file.filename):
             return erro_json('Formato de imagem inválido. Use PNG, JPG, JPEG ou WEBP.', 400)
+        from flask import current_app
         extensao = avatar_file.filename.rsplit('.', 1)[1].lower()
         nome_arquivo = f"user_{user_id}_{int(time.time())}.{extensao}"
-        caminho_relativo = os.path.join('uploads', 'avatars', nome_arquivo)
-        caminho_completo = os.path.join('static', caminho_relativo)
+        caminho_completo = os.path.join(current_app.static_folder, 'uploads', 'avatars', nome_arquivo)
+        os.makedirs(os.path.dirname(caminho_completo), exist_ok=True)
         avatar_file.save(caminho_completo)
-        avatar_url = f"/static/{caminho_relativo}"
+        avatar_url = f"/static/uploads/avatars/{nome_arquivo}"
 
     with db_connection() as conn:
         existing = conn.execute("SELECT id FROM users WHERE email = ? AND id != ?", (email, user_id)).fetchone()

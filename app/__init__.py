@@ -17,7 +17,7 @@ def create_app():
 
     if DB_TYPE == 'sqlite':
         os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    os.makedirs(os.path.join(flask_app.static_folder, 'uploads', 'avatars'), exist_ok=True)
 
     from app.routes import auth, lancamentos, orcamentos, metas, relatorios, contas, social, pluggy, ia, importacao
     for bp in [auth.bp, lancamentos.bp, orcamentos.bp, metas.bp, relatorios.bp, contas.bp, social.bp, pluggy.bp, ia.bp, importacao.bp]:
