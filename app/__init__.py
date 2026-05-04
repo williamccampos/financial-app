@@ -1,0 +1,26 @@
+from flask import Flask
+import os
+from app.config import _get_or_create_secret, DB_PATH, UPLOAD_DIR
+from app.database import init_db
+
+
+def create_app():
+    flask_app = Flask(__name__, template_folder='../templates', static_folder='../static')
+
+    flask_app.secret_key = _get_or_create_secret()
+    flask_app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        SESSION_COOKIE_SECURE=os.getenv('COOKIE_SECURE', '0') in ('1', 'true', 'True')
+    )
+
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    from app.routes import auth, lancamentos, orcamentos, metas, relatorios, contas, social, pluggy, ia, importacao
+    for bp in [auth.bp, lancamentos.bp, orcamentos.bp, metas.bp, relatorios.bp, contas.bp, social.bp, pluggy.bp, ia.bp, importacao.bp]:
+        flask_app.register_blueprint(bp)
+
+    init_db()
+
+    return flask_app
