@@ -1,6 +1,6 @@
 from flask import Flask
 import os
-from app.config import _get_or_create_secret, DB_PATH, UPLOAD_DIR
+from app.config import _get_or_create_secret, DB_PATH, DB_TYPE, UPLOAD_DIR
 from app.database import init_db
 
 
@@ -15,7 +15,8 @@ def create_app():
         SESSION_COOKIE_SECURE=os.getenv('COOKIE_SECURE', '0') in ('1', 'true', 'True')
     )
 
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    if DB_TYPE == 'sqlite':
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     from app.routes import auth, lancamentos, orcamentos, metas, relatorios, contas, social, pluggy, ia, importacao

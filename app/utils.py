@@ -5,8 +5,8 @@ import pandas as pd
 from datetime import datetime
 from functools import wraps
 from flask import request, jsonify, session, redirect, url_for
-from app.database import db_connection
-from app.config import TIPOS_VALIDOS, CATEGORIAS_PADRAO, MAX_LOGIN_ATTEMPTS, LOGIN_WINDOW_SECONDS
+from app.database import db_connection, raw_connection, sql
+from app.config import TIPOS_VALIDOS, CATEGORIAS_PADRAO, MAX_LOGIN_ATTEMPTS, LOGIN_WINDOW_SECONDS, DB_TYPE
 
 LOGIN_ATTEMPTS = {}
 
@@ -141,19 +141,20 @@ def validar_lancamento_payload(data, update=False):
 
 
 def query_lancamentos(user_id, inicio=None, fim=None, tipo=None, categoria=None):
-    clauses = ["user_id = ?"]
+    ph = '%s' if DB_TYPE == 'postgresql' else '?'
+    clauses = [f"user_id = {ph}"]
     params = [user_id]
     if inicio:
-        clauses.append("data >= ?"); params.append(inicio)
+        clauses.append(f"data >= {ph}"); params.append(inicio)
     if fim:
-        clauses.append("data <= ?"); params.append(fim)
+        clauses.append(f"data <= {ph}"); params.append(fim)
     if tipo and tipo != 'todos':
-        clauses.append("tipo = ?"); params.append(tipo)
+        clauses.append(f"tipo = {ph}"); params.append(tipo)
     if categoria:
-        clauses.append("categoria = ?"); params.append(categoria)
+        clauses.append(f"categoria = {ph}"); params.append(categoria)
     where = " AND ".join(clauses)
 
-    with db_connection() as conn:
+    with raw_connection() as conn:
         df = pd.read_sql_query(
             f"SELECT * FROM lancamentos WHERE {where} ORDER BY data DESC",
             conn, params=params, parse_dates=['data']
@@ -280,7 +281,7 @@ def common_template_context(user, active_tab):
             ).fetchall()
             for r in rows:
                 gasto = conn.execute(
-                    "SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND categoria = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta')",
+                    sql("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND categoria = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta')"),
                     (user_id, r[1], mes_atual)
                 ).fetchone()[0]
                 pct = round((gasto / r[2]) * 100, 1) if r[2] > 0 else 0

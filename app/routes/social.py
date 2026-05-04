@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, UTC
-from app.database import db_connection
+from app.database import db_connection, sql
 from app.utils import erro_json, validar_email, validar_csrf, login_required, get_current_user_id
 
 bp = Blueprint('social', __name__)
@@ -25,7 +25,7 @@ def compartilhar():
             return erro_json('Usuário não encontrado.', 404)
         if target[0] == user_id:
             return erro_json('Não é possível compartilhar consigo mesmo.', 400)
-        conn.execute("INSERT OR REPLACE INTO compartilhamentos (owner_id, shared_with_id, permissao, criado_em) VALUES (?,?,?,?)",
+        conn.execute(sql("INSERT OR REPLACE INTO compartilhamentos (owner_id, shared_with_id, permissao, criado_em) VALUES (?,?,?,?)"),
             (user_id, target[0], permissao, datetime.now(UTC).isoformat()))
     return jsonify({'status': 'ok'})
 

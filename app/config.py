@@ -19,7 +19,9 @@ CATEGORIA_KEYWORDS = {
     'Cartão de Crédito': ['fatura', 'cartão', 'nubank', 'inter', 'c6'],
 }
 
-DB_PATH = 'data/lancamentos.db'
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///data/lancamentos.db')
+DB_TYPE = 'postgresql' if DATABASE_URL.startswith('postgres') else 'sqlite'
+DB_PATH = 'data/lancamentos.db'  # fallback para SQLite local
 UPLOAD_DIR = os.path.join('static', 'uploads', 'avatars')
 PLUGGY_API_URL = 'https://api.pluggy.ai'
 MAX_LOGIN_ATTEMPTS = 5

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 import calendar
-from app.database import db_connection
+from app.database import db_connection, sql
 from app.config import CATEGORIA_KEYWORDS
 from app.utils import login_required, get_current_user_id
 
@@ -36,10 +36,10 @@ def api_insights():
     insights = []
     with db_connection() as conn:
         atual = conn.execute(
-            "SELECT categoria, SUM(valor) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta') AND categoria != '' GROUP BY categoria",
+            sql("SELECT categoria, SUM(valor) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta') AND categoria != '' GROUP BY categoria"),
             (user_id, mes_atual)).fetchall()
         medias = conn.execute(
-            "SELECT categoria, AVG(total) FROM (SELECT categoria, strftime('%Y-%m', data) as mes, SUM(valor) as total FROM lancamentos WHERE user_id = ? AND tipo IN ('saida','divida','conta') AND categoria != '' AND strftime('%Y-%m', data) < ? GROUP BY categoria, mes) GROUP BY categoria",
+            sql("SELECT categoria, AVG(total) FROM (SELECT categoria, strftime('%Y-%m', data) as mes, SUM(valor) as total FROM lancamentos WHERE user_id = ? AND tipo IN ('saida','divida','conta') AND categoria != '' AND strftime('%Y-%m', data) < ? GROUP BY categoria, mes) GROUP BY categoria"),
             (user_id, mes_atual)).fetchall()
     media_map = {r[0]: r[1] for r in medias}
     for cat, gasto in atual:
@@ -52,8 +52,8 @@ def api_insights():
         elif variacao < -20:
             insights.append({'tipo': 'positivo', 'icone': '📉', 'mensagem': f'Parabéns! Você economizou {abs(variacao)}% em {cat} este mês (R$ {gasto:.0f} vs média R$ {media:.0f}).'})
     with db_connection() as conn:
-        entradas = conn.execute("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('entrada','salario','recebimento')", (user_id, mes_atual)).fetchone()[0]
-        saidas = conn.execute("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta')", (user_id, mes_atual)).fetchone()[0]
+        entradas = conn.execute(sql("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('entrada','salario','recebimento')"), (user_id, mes_atual)).fetchone()[0]
+        saidas = conn.execute(sql("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta')"), (user_id, mes_atual)).fetchone()[0]
     saldo = entradas - saidas
     if saldo > 0:
         taxa_poupanca = round((saldo / entradas) * 100, 1) if entradas > 0 else 0
@@ -76,10 +76,10 @@ def api_projecao():
     dias_no_mes = calendar.monthrange(hoje.year, hoje.month)[1]
     dias_restantes = dias_no_mes - dia_atual
     with db_connection() as conn:
-        entradas = conn.execute("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('entrada','salario','recebimento')", (user_id, mes_atual)).fetchone()[0]
-        saidas_ate_agora = conn.execute("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta')", (user_id, mes_atual)).fetchone()[0]
+        entradas = conn.execute(sql("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('entrada','salario','recebimento')"), (user_id, mes_atual)).fetchone()[0]
+        saidas_ate_agora = conn.execute(sql("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta')"), (user_id, mes_atual)).fetchone()[0]
         recorrentes_pendentes = conn.execute(
-            "SELECT COALESCE(SUM(sub.valor),0) FROM (SELECT descricao, tipo, MAX(valor) as valor FROM lancamentos WHERE user_id = ? AND recorrente = 1 AND tipo IN ('saida','divida','conta') GROUP BY descricao, tipo) sub WHERE sub.descricao NOT IN (SELECT descricao FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta'))",
+            sql("SELECT COALESCE(SUM(sub.valor),0) FROM (SELECT descricao, tipo, MAX(valor) as valor FROM lancamentos WHERE user_id = ? AND recorrente = 1 AND tipo IN ('saida','divida','conta') GROUP BY descricao, tipo) sub WHERE sub.descricao NOT IN (SELECT descricao FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta'))"),
             (user_id, user_id, mes_atual)).fetchone()[0]
     gasto_diario = saidas_ate_agora / dia_atual if dia_atual > 0 else 0
     projecao_gastos = saidas_ate_agora + (gasto_diario * dias_restantes) + recorrentes_pendentes

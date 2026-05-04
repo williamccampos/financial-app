@@ -3,6 +3,7 @@ from datetime import datetime
 import csv
 import io
 from app.database import db_connection
+from app.database import db_connection, sql
 from app.utils import (
     login_required, get_current_user, get_current_user_id,
     query_lancamentos, agregar_resumo, agregar_serie_mensal,
@@ -123,7 +124,7 @@ def api_comparativo_mensal():
     user_id = get_current_user_id()
     meses = min(int(request.args.get('meses', 6)), 12)
     with db_connection() as conn:
-        rows = conn.execute("SELECT strftime('%Y-%m', data) as mes, categoria, tipo, SUM(valor) as total FROM lancamentos WHERE user_id = ? GROUP BY mes, categoria, tipo ORDER BY mes DESC", (user_id,)).fetchall()
+        rows = conn.execute(sql("SELECT strftime('%Y-%m', data) as mes, categoria, tipo, SUM(valor) as total FROM lancamentos WHERE user_id = ? GROUP BY mes, categoria, tipo ORDER BY mes DESC"), (user_id,)).fetchall()
     dados = {}
     for r in rows:
         mes = r[0]

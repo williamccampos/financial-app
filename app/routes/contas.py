@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, UTC
-from app.database import db_connection
+from app.database import db_connection, sql
 from app.utils import erro_json, validar_csrf, login_required, get_current_user_id
 
 bp = Blueprint('contas', __name__)
@@ -68,7 +68,7 @@ def api_patrimonio():
         items.append({'id': r[0], 'nome': r[1], 'emoji': r[2], 'tipo': r[3], 'saldo': saldo, 'cor': r[5]})
     evolucao = []
     with db_connection() as conn:
-        rows = conn.execute("SELECT strftime('%Y-%m', data) as mes, COALESCE(SUM(CASE WHEN tipo IN ('entrada','salario','recebimento') THEN valor ELSE -valor END), 0) FROM lancamentos WHERE user_id = ? GROUP BY mes ORDER BY mes DESC LIMIT 6", (user_id,)).fetchall()
+        rows = conn.execute(sql("SELECT strftime('%Y-%m', data) as mes, COALESCE(SUM(CASE WHEN tipo IN ('entrada','salario','recebimento') THEN valor ELSE -valor END), 0) FROM lancamentos WHERE user_id = ? GROUP BY mes ORDER BY mes DESC LIMIT 6"), (user_id,)).fetchall()
     acum = 0
     for r in sorted(rows, key=lambda x: x[0]):
         acum += r[1]

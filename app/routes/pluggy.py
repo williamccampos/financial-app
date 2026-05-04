@@ -2,8 +2,8 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, UTC
 import requests as http_requests
 import os
-from app.database import db_connection
-from app.config import PLUGGY_API_URL
+from app.database import db_connection, sql
+from app.config import PLUGGY_API_URL, DB_TYPE
 from app.utils import erro_json, validar_csrf, login_required, get_current_user_id
 
 bp = Blueprint('pluggy', __name__)
@@ -50,9 +50,13 @@ def pluggy_item_connected():
         return erro_json('itemId é obrigatório.', 400)
     user_id = get_current_user_id()
     with db_connection() as conn:
-        conn.execute("INSERT INTO contas (user_id, nome, emoji, tipo, saldo_inicial, cor, criado_em) VALUES (?,?,'🏦','corrente',0,'#007aff',?)",
-            (user_id, connector_name or 'Banco conectado', datetime.now(UTC).isoformat()))
-        conta_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        if DB_TYPE == 'postgresql':
+            conta_id = conn.execute("INSERT INTO contas (user_id, nome, emoji, tipo, saldo_inicial, cor, criado_em) VALUES (?,?,'🏦','corrente',0,'#007aff',?) RETURNING id",
+                (user_id, connector_name or 'Banco conectado', datetime.now(UTC).isoformat())).fetchone()[0]
+        else:
+            conn.execute("INSERT INTO contas (user_id, nome, emoji, tipo, saldo_inicial, cor, criado_em) VALUES (?,?,'🏦','corrente',0,'#007aff',?)",
+                (user_id, connector_name or 'Banco conectado', datetime.now(UTC).isoformat()))
+            conta_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
         conn.execute("INSERT INTO conexoes_bancarias (user_id, item_id, connector_name, conta_id, criado_em) VALUES (?,?,?,?,?)",
             (user_id, item_id, connector_name, conta_id, datetime.now(UTC).isoformat()))
     return jsonify({'status': 'ok', 'conta_id': conta_id})
