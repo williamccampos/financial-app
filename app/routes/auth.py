@@ -32,7 +32,7 @@ def login():
 
     with db_connection() as conn:
         user = conn.execute(
-            "SELECT id, name, nickname, email, password_hash, avatar_url FROM users WHERE email = ?",
+            "SELECT id, name, nickname, email, password_hash, avatar_url, onboarding_done FROM users WHERE email = ?",
             (email,)
         ).fetchone()
 
@@ -46,7 +46,8 @@ def login():
     session['user_nickname'] = user[2] or ''
     session['user_avatar'] = user[5] or ''
     get_csrf_token()
-    return render_template('login.html', sucesso='Login realizado. Redirecionando...', redirect_to=url_for('relatorios.index'))
+    redirect_to = url_for('relatorios.index') if user[6] else url_for('onboarding.onboarding_page')
+    return render_template('login.html', sucesso='Login realizado. Redirecionando...', redirect_to=redirect_to)
 
 
 @bp.route('/cadastro', methods=['GET', 'POST'])
