@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 import pandas as pd
 from app.database import db_connection
+from app.database import sql
 from app.utils import (
     erro_json, validar_csrf, login_required, get_current_user_id,
     validar_lancamento_payload, query_lancamentos_paginado
@@ -113,7 +114,7 @@ def api_spending_line():
     mes = request.args.get('mes') or datetime.now().strftime('%Y-%m')
     with db_connection() as conn:
         rows = conn.execute(
-            "SELECT data, tipo, SUM(valor) as total FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? GROUP BY data, tipo ORDER BY data",
+            sql("SELECT data, tipo, SUM(valor) as total FROM lancamentos WHERE user_id = ? AND strftime('%Y-%m', data) = ? GROUP BY data, tipo ORDER BY data"),
             (user_id, mes)).fetchall()
 
     tipos_saida = {'saida', 'divida', 'conta'}
@@ -175,7 +176,7 @@ def gerar_recorrentes():
 
         for r in recorrentes:
             existe = conn.execute(
-                "SELECT id FROM lancamentos WHERE user_id = ? AND descricao = ? AND tipo = ? AND strftime('%Y-%m', data) = ?",
+                sql("SELECT id FROM lancamentos WHERE user_id = ? AND descricao = ? AND tipo = ? AND strftime('%Y-%m', data) = ?"),
                 (user_id, r[0], r[1], mes_atual)).fetchone()
             if not existe:
                 hoje = datetime.now()

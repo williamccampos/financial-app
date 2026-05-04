@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from app.database import db_connection
+from app.database import db_connection, sql
 from app.config import CATEGORIAS_PADRAO
 from app.utils import erro_json, validar_csrf, login_required, get_current_user_id
 
@@ -26,7 +26,7 @@ def criar_orcamento():
         return erro_json('Limite inválido.', 400)
 
     with db_connection() as conn:
-        conn.execute("INSERT OR REPLACE INTO orcamentos (user_id, categoria, limite, mes) VALUES (?,?,?,?)",
+        conn.execute(sql("INSERT OR REPLACE INTO orcamentos (user_id, categoria, limite, mes) VALUES (?,?,?,?)"),
             (get_current_user_id(), categoria, limite, mes))
     return jsonify({'status': 'ok'})
 
@@ -65,7 +65,7 @@ def salvar_categoria():
     if not nome:
         return erro_json('Nome é obrigatório.', 400)
     with db_connection() as conn:
-        conn.execute("INSERT OR REPLACE INTO categorias (user_id, nome, emoji) VALUES (?,?,?)",
+        conn.execute(sql("INSERT OR REPLACE INTO categorias (user_id, nome, emoji) VALUES (?,?,?)"),
             (get_current_user_id(), nome, emoji))
     return jsonify({'status': 'ok'})
 
@@ -80,7 +80,7 @@ def api_rollover():
     rollovers = []
     with db_connection() as conn:
         for cat, limite in conn.execute("SELECT categoria, limite FROM orcamentos WHERE user_id = ? AND mes = ?", (user_id, mes_anterior)).fetchall():
-            gasto = conn.execute("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND categoria = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta')", (user_id, cat, mes_anterior)).fetchone()[0]
+            gasto = conn.execute(sql("SELECT COALESCE(SUM(valor),0) FROM lancamentos WHERE user_id = ? AND categoria = ? AND strftime('%Y-%m', data) = ? AND tipo IN ('saida','divida','conta')"), (user_id, cat, mes_anterior)).fetchone()[0]
             sobra = round(limite - gasto, 2)
             if sobra > 0:
                 rollovers.append({'categoria': cat, 'sobra': sobra})

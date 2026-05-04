@@ -1,3 +1,9 @@
+databases:
+  - name: finanzen-db
+    plan: free
+    databaseName: finanzen
+    user: finanzen
+
 services:
   - type: web
     name: finanzen
@@ -8,6 +14,10 @@ services:
     envVars:
       - key: SECRET_KEY
         generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: finanzen-db
+          property: connectionString
       - key: PLUGGY_CLIENT_ID
         sync: false
       - key: PLUGGY_CLIENT_SECRET
