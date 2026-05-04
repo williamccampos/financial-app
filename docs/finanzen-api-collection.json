@@ -1,0 +1,507 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_source": "finanzen",
+  "resources": [
+    {
+      "_id": "wrk_finanzen",
+      "_type": "workspace",
+      "name": "FinanZen API",
+      "description": "Collection completa da API FinanZen"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_finanzen",
+      "name": "Base",
+      "data": {
+        "base_url": "https://finanzen-u2bt.onrender.com",
+        "csrf_token": ""
+      }
+    },
+    {
+      "_id": "env_local",
+      "_type": "environment",
+      "parentId": "wrk_finanzen",
+      "name": "Local",
+      "data": {
+        "base_url": "http://localhost:8000",
+        "csrf_token": ""
+      }
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "🔐 Auth"
+    },
+    {
+      "_id": "req_cadastro",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Cadastro",
+      "method": "POST",
+      "url": "{{ base_url }}/cadastro",
+      "headers": [{"name": "Content-Type", "value": "application/x-www-form-urlencoded"}],
+      "body": {
+        "mimeType": "application/x-www-form-urlencoded",
+        "params": [
+          {"name": "name", "value": "Teste User"},
+          {"name": "email", "value": "teste@finanzen.app"},
+          {"name": "password", "value": "SenhaForte123"},
+          {"name": "password_confirm", "value": "SenhaForte123"}
+        ]
+      }
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{ base_url }}/login",
+      "headers": [{"name": "Content-Type", "value": "application/x-www-form-urlencoded"}],
+      "body": {
+        "mimeType": "application/x-www-form-urlencoded",
+        "params": [
+          {"name": "email", "value": "teste@finanzen.app"},
+          {"name": "password", "value": "SenhaForte123"}
+        ]
+      }
+    },
+    {
+      "_id": "req_logout",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Logout",
+      "method": "POST",
+      "url": "{{ base_url }}/logout",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}]
+    },
+    {
+      "_id": "req_perfil_get",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Perfil (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/perfil"
+    },
+    {
+      "_id": "req_perfil_post",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Perfil (Atualizar)",
+      "method": "POST",
+      "url": "{{ base_url }}/perfil",
+      "headers": [
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"},
+        {"name": "Content-Type", "value": "application/x-www-form-urlencoded"}
+      ],
+      "body": {
+        "mimeType": "application/x-www-form-urlencoded",
+        "params": [
+          {"name": "name", "value": "Nome Atualizado"},
+          {"name": "nickname", "value": "Nick"},
+          {"name": "email", "value": "teste@finanzen.app"},
+          {"name": "password", "value": ""}
+        ]
+      }
+    },
+    {
+      "_id": "fld_lancamentos",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "💰 Lançamentos"
+    },
+    {
+      "_id": "req_criar_lancamento",
+      "_type": "request",
+      "parentId": "fld_lancamentos",
+      "name": "Criar Lançamento",
+      "method": "POST",
+      "url": "{{ base_url }}/lancamento",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": \"2026-05-01\",\n  \"tipo\": \"saida\",\n  \"descricao\": \"Supermercado\",\n  \"valor\": 250.00,\n  \"categoria\": \"Alimentação\",\n  \"vencimento\": \"\",\n  \"recorrente\": false,\n  \"parcelas\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_listar_lancamentos",
+      "_type": "request",
+      "parentId": "fld_lancamentos",
+      "name": "Listar Lançamentos (Paginado)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/lancamentos?page=1&per_page=15&sort=data&order=desc"
+    },
+    {
+      "_id": "req_editar_lancamento_get",
+      "_type": "request",
+      "parentId": "fld_lancamentos",
+      "name": "Obter Lançamento",
+      "method": "GET",
+      "url": "{{ base_url }}/editar/1"
+    },
+    {
+      "_id": "req_editar_lancamento_post",
+      "_type": "request",
+      "parentId": "fld_lancamentos",
+      "name": "Editar Lançamento",
+      "method": "POST",
+      "url": "{{ base_url }}/editar/1",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": \"2026-05-01\",\n  \"tipo\": \"saida\",\n  \"descricao\": \"Supermercado Editado\",\n  \"valor\": 300.00,\n  \"categoria\": \"Alimentação\",\n  \"vencimento\": \"\",\n  \"recorrente\": false,\n  \"parcelas\": 1,\n  \"parcela_atual\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_excluir_lancamento",
+      "_type": "request",
+      "parentId": "fld_lancamentos",
+      "name": "Excluir Lançamento",
+      "method": "DELETE",
+      "url": "{{ base_url }}/excluir/1",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}]
+    },
+    {
+      "_id": "req_spending_line",
+      "_type": "request",
+      "parentId": "fld_lancamentos",
+      "name": "Spending Line",
+      "method": "GET",
+      "url": "{{ base_url }}/api/spending-line?mes=2026-05"
+    },
+    {
+      "_id": "req_assinaturas",
+      "_type": "request",
+      "parentId": "fld_lancamentos",
+      "name": "Assinaturas",
+      "method": "GET",
+      "url": "{{ base_url }}/api/assinaturas"
+    },
+    {
+      "_id": "req_gerar_recorrentes",
+      "_type": "request",
+      "parentId": "fld_lancamentos",
+      "name": "Gerar Recorrentes",
+      "method": "POST",
+      "url": "{{ base_url }}/gerar-recorrentes",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}]
+    },
+    {
+      "_id": "fld_orcamentos",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "📊 Orçamentos & Categorias"
+    },
+    {
+      "_id": "req_criar_orcamento",
+      "_type": "request",
+      "parentId": "fld_orcamentos",
+      "name": "Criar Orçamento",
+      "method": "POST",
+      "url": "{{ base_url }}/orcamento",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"categoria\": \"Alimentação\",\n  \"limite\": 800,\n  \"mes\": \"2026-05\"\n}"
+      }
+    },
+    {
+      "_id": "req_excluir_orcamento",
+      "_type": "request",
+      "parentId": "fld_orcamentos",
+      "name": "Excluir Orçamento",
+      "method": "DELETE",
+      "url": "{{ base_url }}/orcamento/1",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}]
+    },
+    {
+      "_id": "req_categorias_get",
+      "_type": "request",
+      "parentId": "fld_orcamentos",
+      "name": "Listar Categorias",
+      "method": "GET",
+      "url": "{{ base_url }}/api/categorias"
+    },
+    {
+      "_id": "req_categorias_post",
+      "_type": "request",
+      "parentId": "fld_orcamentos",
+      "name": "Criar Categoria",
+      "method": "POST",
+      "url": "{{ base_url }}/api/categorias",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Pets\",\n  \"emoji\": \"🐕\"\n}"
+      }
+    },
+    {
+      "_id": "req_rollover",
+      "_type": "request",
+      "parentId": "fld_orcamentos",
+      "name": "Rollover",
+      "method": "GET",
+      "url": "{{ base_url }}/api/rollover"
+    },
+    {
+      "_id": "fld_metas",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "🎯 Metas"
+    },
+    {
+      "_id": "req_criar_meta",
+      "_type": "request",
+      "parentId": "fld_metas",
+      "name": "Criar Meta",
+      "method": "POST",
+      "url": "{{ base_url }}/meta",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Viagem Europa\",\n  \"emoji\": \"✈️\",\n  \"valor_alvo\": 15000,\n  \"prazo\": \"2026-12-31\"\n}"
+      }
+    },
+    {
+      "_id": "req_depositar_meta",
+      "_type": "request",
+      "parentId": "fld_metas",
+      "name": "Depositar na Meta",
+      "method": "POST",
+      "url": "{{ base_url }}/meta/1",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"valor_deposito\": 500\n}"
+      }
+    },
+    {
+      "_id": "req_excluir_meta",
+      "_type": "request",
+      "parentId": "fld_metas",
+      "name": "Excluir Meta",
+      "method": "DELETE",
+      "url": "{{ base_url }}/meta/1",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}]
+    },
+    {
+      "_id": "fld_contas",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "🏦 Contas & Patrimônio"
+    },
+    {
+      "_id": "req_listar_contas",
+      "_type": "request",
+      "parentId": "fld_contas",
+      "name": "Listar Contas",
+      "method": "GET",
+      "url": "{{ base_url }}/api/contas"
+    },
+    {
+      "_id": "req_criar_conta",
+      "_type": "request",
+      "parentId": "fld_contas",
+      "name": "Criar Conta",
+      "method": "POST",
+      "url": "{{ base_url }}/api/contas",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Nubank\",\n  \"emoji\": \"💜\",\n  \"tipo\": \"corrente\",\n  \"saldo_inicial\": 1000,\n  \"cor\": \"#8B00FF\"\n}"
+      }
+    },
+    {
+      "_id": "req_excluir_conta",
+      "_type": "request",
+      "parentId": "fld_contas",
+      "name": "Excluir Conta",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/contas/1",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}]
+    },
+    {
+      "_id": "req_patrimonio",
+      "_type": "request",
+      "parentId": "fld_contas",
+      "name": "Patrimônio",
+      "method": "GET",
+      "url": "{{ base_url }}/api/patrimonio"
+    },
+    {
+      "_id": "fld_relatorios",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "📈 Relatórios & IA"
+    },
+    {
+      "_id": "req_comparativo",
+      "_type": "request",
+      "parentId": "fld_relatorios",
+      "name": "Comparativo Mensal",
+      "method": "GET",
+      "url": "{{ base_url }}/api/relatorio/comparativo?meses=6"
+    },
+    {
+      "_id": "req_insights",
+      "_type": "request",
+      "parentId": "fld_relatorios",
+      "name": "Insights IA",
+      "method": "GET",
+      "url": "{{ base_url }}/api/insights"
+    },
+    {
+      "_id": "req_projecao",
+      "_type": "request",
+      "parentId": "fld_relatorios",
+      "name": "Projeção",
+      "method": "GET",
+      "url": "{{ base_url }}/api/projecao"
+    },
+    {
+      "_id": "req_sugerir_categoria",
+      "_type": "request",
+      "parentId": "fld_relatorios",
+      "name": "Sugerir Categoria",
+      "method": "GET",
+      "url": "{{ base_url }}/api/sugerir-categoria?descricao=Uber"
+    },
+    {
+      "_id": "req_export_csv",
+      "_type": "request",
+      "parentId": "fld_relatorios",
+      "name": "Exportar CSV",
+      "method": "GET",
+      "url": "{{ base_url }}/relatorios/export/csv?inicio=2026-01-01&fim=2026-12-31"
+    },
+    {
+      "_id": "fld_social",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "👥 Social"
+    },
+    {
+      "_id": "req_compartilhar",
+      "_type": "request",
+      "parentId": "fld_social",
+      "name": "Compartilhar",
+      "method": "POST",
+      "url": "{{ base_url }}/api/compartilhar",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"parceiro@email.com\",\n  \"permissao\": \"leitura\"\n}"
+      }
+    },
+    {
+      "_id": "req_listar_compartilhamentos",
+      "_type": "request",
+      "parentId": "fld_social",
+      "name": "Listar Compartilhamentos",
+      "method": "GET",
+      "url": "{{ base_url }}/api/compartilhamentos"
+    },
+    {
+      "_id": "req_remover_compartilhamento",
+      "_type": "request",
+      "parentId": "fld_social",
+      "name": "Remover Compartilhamento",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/compartilhar/1",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}]
+    },
+    {
+      "_id": "fld_push",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "🔔 Push Notifications"
+    },
+    {
+      "_id": "req_vapid_key",
+      "_type": "request",
+      "parentId": "fld_push",
+      "name": "VAPID Public Key",
+      "method": "GET",
+      "url": "{{ base_url }}/api/push/vapid-key"
+    },
+    {
+      "_id": "req_push_test",
+      "_type": "request",
+      "parentId": "fld_push",
+      "name": "Enviar Push Teste",
+      "method": "POST",
+      "url": "{{ base_url }}/api/push/test",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}]
+    },
+    {
+      "_id": "fld_onboarding",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "🚀 Onboarding"
+    },
+    {
+      "_id": "req_onboarding_complete",
+      "_type": "request",
+      "parentId": "fld_onboarding",
+      "name": "Completar Onboarding",
+      "method": "POST",
+      "url": "{{ base_url }}/onboarding/complete",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"renda\": 5000,\n  \"contas_fixas\": [\n    {\"nome\": \"Aluguel\", \"valor\": 1500},\n    {\"nome\": \"Internet\", \"valor\": 100}\n  ],\n  \"orcamentos\": [\n    {\"categoria\": \"Alimentação\", \"limite\": 800},\n    {\"categoria\": \"Transporte\", \"limite\": 300}\n  ]\n}"
+      }
+    },
+    {
+      "_id": "fld_importacao",
+      "_type": "request_group",
+      "parentId": "wrk_finanzen",
+      "name": "📥 Importação"
+    },
+    {
+      "_id": "req_importar_csv",
+      "_type": "request",
+      "parentId": "fld_importacao",
+      "name": "Importar CSV",
+      "method": "POST",
+      "url": "{{ base_url }}/importar/csv",
+      "headers": [{"name": "X-CSRF-Token", "value": "{{ csrf_token }}"}],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          {"name": "arquivo", "type": "file", "fileName": "extrato.csv"}
+        ]
+      }
+    }
+  ]
+}
