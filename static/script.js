@@ -866,4 +866,42 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   loadConexoes();
+
+  // ── Push Notifications ──
+  async function initPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) return; // já inscrito
+
+    // Pedir permissão após 5s na página
+    setTimeout(async () => {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return;
+
+      const res = await fetch('/api/push/vapid-key');
+      if (!res.ok) return;
+      const { publicKey } = await res.json();
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ subscription: sub.toJSON() })
+      });
+    }, 5000);
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  initPush();
 });

@@ -252,6 +252,15 @@ def _init_sqlite(conn):
             FOREIGN KEY (conta_id) REFERENCES contas(id)
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            endpoint TEXT NOT NULL,
+            subscription_json TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
 
 
 def _init_postgresql(conn):
@@ -356,5 +365,13 @@ def _init_postgresql(conn):
             conta_id INTEGER REFERENCES contas(id),
             criado_em TEXT NOT NULL,
             atualizado_em TEXT
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            endpoint TEXT NOT NULL,
+            subscription_json TEXT NOT NULL
         )
     ''')
