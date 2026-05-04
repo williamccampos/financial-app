@@ -1,0 +1,25 @@
+static/uploads/avatars/*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local database/data
+data/*.db
+data/*.sqlite
+data/.secret_key
+.env
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Editor/OS
+.vscode/
+.DS_Store

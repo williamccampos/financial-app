@@ -1,0 +1,21 @@
+<svg width="220" height="56" viewBox="0 0 220 56" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Logo FinanZen</title>
+  <desc id="desc">Símbolo circular com gráfico financeiro e nome FinanZen.</desc>
+  <defs>
+    <linearGradient id="g1" x1="4" y1="4" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#27D37C"/>
+      <stop offset="1" stop-color="#0A84FF"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="64" y1="12" x2="216" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF2FF"/>
+      <stop offset="1" stop-color="#B8CCFF"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="28" cy="28" r="24" fill="#101B33"/>
+  <circle cx="28" cy="28" r="23" stroke="url(#g1)" stroke-width="2"/>
+  <path d="M14 33L22 25L28 30L40 18" stroke="url(#g1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="40" cy="18" r="2.7" fill="#27D37C"/>
+
+  <text x="64" y="36" fill="url(#g2)" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="30" font-weight="700" letter-spacing="0.4">FinanZen</text>
+</svg>

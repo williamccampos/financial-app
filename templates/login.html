@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login • FinanZen</title>
+  <link rel="icon" href="{{ url_for('static', filename='brand/favicon-finanzen.svg') }}" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <main class="glass-container" role="main">
+      <section class="glass-card section-block auth-card">
+        <a href="/login" class="auth-brand" aria-label="FinanZen">
+          <img src="{{ url_for('static', filename='brand/logo-finanzen.svg') }}" alt="FinanZen" class="auth-brand-logo" />
+        </a>
+        <h1>Entrar no FinanZen</h1>
+        <p class="subtitle">Acesse sua conta para ver seus lançamentos.</p>
+        {% if erro %}<p class="auth-msg auth-msg--error">{{ erro }}</p>{% endif %}
+        {% if sucesso %}<p class="auth-msg auth-msg--success">{{ sucesso }}</p>{% endif %}
+        <form method="post" class="formulario" style="grid-template-columns:1fr;">
+          <div class="campo-form">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autocomplete="email" />
+          </div>
+          <div class="campo-form">
+            <label for="password">Senha</label>
+            <input type="password" id="password" name="password" required autocomplete="current-password" />
+          </div>
+          <button class="botao-principal" type="submit">Entrar</button>
+        </form>
+        <p class="auth-link">Não tem conta? <a href="/cadastro">Criar conta</a></p>
+      </section>
+    </main>
+  </div>
+  {% if redirect_to %}
+  <script>setTimeout(function(){ window.location.href = "{{ redirect_to }}"; }, 700);</script>
+  {% endif %}
+</body>
+</html>

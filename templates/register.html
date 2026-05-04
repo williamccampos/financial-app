@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastro • FinanZen</title>
+  <link rel="icon" href="{{ url_for('static', filename='brand/favicon-finanzen.svg') }}" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <main class="glass-container" role="main">
+      <section class="glass-card section-block auth-card">
+        <a href="/login" class="auth-brand" aria-label="FinanZen">
+          <img src="{{ url_for('static', filename='brand/logo-finanzen.svg') }}" alt="FinanZen" class="auth-brand-logo" />
+        </a>
+        <h1>Criar conta</h1>
+        <p class="subtitle">Crie seu acesso para ter seus dados financeiros separados e seguros.</p>
+        {% if erro %}<p class="auth-msg auth-msg--error">{{ erro }}</p>{% endif %}
+        {% if sucesso %}<p class="auth-msg auth-msg--success">{{ sucesso }}</p>{% endif %}
+        <form method="post" class="formulario" style="grid-template-columns:1fr;">
+          <div class="campo-form">
+            <label for="name">Nome</label>
+            <input type="text" id="name" name="name" required autocomplete="name" />
+          </div>
+          <div class="campo-form">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autocomplete="email" />
+          </div>
+          <div class="campo-form">
+            <label for="password">Senha</label>
+            <input type="password" id="password" name="password" minlength="8" required autocomplete="new-password" />
+            <small class="campo-ajuda">Mínimo 8 caracteres.</small>
+          </div>
+          <div class="campo-form">
+            <label for="password_confirm">Confirmar senha</label>
+            <input type="password" id="password_confirm" name="password_confirm" minlength="8" required autocomplete="new-password" />
+          </div>
+          <button class="botao-principal" type="submit">Criar conta</button>
+        </form>
+        <p class="auth-link">Já tem conta? <a href="/login">Entrar</a></p>
+      </section>
+    </main>
+  </div>
+  {% if redirect_to %}
+  <script>setTimeout(function(){ window.location.href = "{{ redirect_to }}"; }, 800);</script>
+  {% endif %}
+</body>
+</html>

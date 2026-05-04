@@ -1,157 +1,633 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-theme="light">
+<html lang="pt-br">
 <head>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))</script>
   <meta charset="UTF-8" />
   <title>FinanZen – Controle Inteligente</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="shortcut icon" href="https://cdn-icons-png.flaticon.com/512/1183/1183672.png" type="image/png" />
+  <meta name="csrf-token" content="{{ csrf_token }}" />
+  <link rel="icon" href="{{ url_for('static', filename='brand/favicon-finanzen.svg') }}" type="image/svg+xml" />
+  <link rel="alternate icon" href="{{ url_for('static', filename='brand/favicon-finanzen.svg') }}" type="image/svg+xml" />
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#007aff" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.pluggy.ai/pluggy-connect.js" async></script>
 </head>
-<body>
-  <div class="glass-container">
-    <div class="header">
-      <h1>💰 Painel Financeiro</h1>
-      <button id="toggle-theme" class="botao-tema">🌙 Modo Escuro</button>
-    </div>
-
-    <form action="/lancamento" method="post" class="formulario">
-      <div class="campo-form">
-        <label for="data">Data</label>
-        <input type="date" name="data" id="data" required />
+  <body data-entrada="{{ entrada | default(0.0) | float }}" data-saida="{{ saida | default(0.0) | float }}" data-saldo="{{ saldo | default(0.0) | float }}" data-dados='{{ dados | tojson }}'>
+  <div class="app-shell">
+    <header class="global-header" role="banner">
+      <a href="/dashboard" class="global-brand" aria-label="Ir para dashboard do FinanZen">
+        <img src="{{ url_for('static', filename='brand/logo-finanzen.svg') }}" alt="FinanZen" class="global-brand-logo" />
+      </a>
+      <nav class="top-tabs" aria-label="Navegação principal">
+        <a href="/dashboard" data-tab="dashboard" class="top-tab {{ 'is-active' if active_tab == 'dashboard' else '' }}">Dashboard</a>
+        <a href="/lancamentos" data-tab="lancamentos" class="top-tab {{ 'is-active' if active_tab == 'lancamentos' else '' }}">Lançamentos</a>
+        <a href="/relatorios" data-tab="relatorios" class="top-tab {{ 'is-active' if active_tab == 'relatorios' else '' }}">Relatórios</a>
+      </nav>
+      <div class="header-acoes">
+        <button id="toggle-theme" class="botao-tema botao-tema--icon" aria-label="Alternar tema de cores" aria-pressed="false">🌙</button>
+        <button id="avatar-trigger" class="avatar-trigger" aria-label="Abrir menu do perfil" aria-expanded="false">
+          {% if user_avatar %}
+          <img src="{{ user_avatar }}" alt="Avatar de {{ user_name }}" class="avatar-img" />
+          {% else %}
+          <span class="avatar-fallback">{{ (user_name or 'U')[0] | upper }}</span>
+          {% endif %}
+        </button>
+        <div id="avatar-menu" class="avatar-menu" hidden>
+          <button id="editar-perfil-btn" type="button" class="avatar-menu-item">Editar perfil</button>
+          <button id="logout-btn" class="avatar-menu-item" aria-label="Sair da conta">Sair</button>
+        </div>
       </div>
+    </header>
 
-      <div class="campo-form">
-        <label for="tipo">Tipo</label>
-        <select name="tipo" id="tipo" required>
-          <option value="entrada">Entrada</option>
-          <option value="saida">Saída</option>
-          <option value="salario">Salário</option>
-          <option value="recebimento">Recebimento</option>
-          <option value="divida">Dívida</option>
-          <option value="conta">Conta Fixa</option>
-        </select>
-      </div>
+    <main class="glass-container" role="main">
+      <header class="header section-head">
+        <div>
+          <h1>💰 Seu saldo do mês em tempo real</h1>
+          <p class="subtitle">Registre movimentações, acompanhe tendências e tome decisões financeiras com mais clareza.</p>
+        </div>
+      </header>
 
-      <div class="campo-form">
-        <label for="descricao">Descrição</label>
-        <input type="text" name="descricao" id="descricao" required />
-      </div>
+      {% if active_tab == 'lancamentos' %}
+      <section class="glass-card section-block" aria-labelledby="form-title" data-tab-panel="lancamentos dashboard">
+        <div class="section-head-inline">
+          <h2 id="form-title">Novo lançamento</h2>
+          <p>Preencha os campos para registrar sua movimentação financeira.</p>
+        </div>
 
-      <div class="campo-form">
-        <label for="valor">Valor</label>
-        <input type="number" step="0.01" name="valor" id="valor" required placeholder="Ex: 199.90" />
-      </div>
+        <form action="/lancamento" method="post" class="formulario">
+          <div class="campo-form">
+            <label for="data">Data</label>
+            <input type="date" name="data" id="data" required />
+          </div>
 
-      <div class="campo-form">
-        <label for="categoria">Categoria</label>
-        <select name="categoria" id="categoria">
-          <option value="">Selecione</option>
-          <option value="Moradia">Moradia</option>
-          <option value="Alimentação">Alimentação</option>
-          <option value="Transporte">Transporte</option>
-          <option value="Educação">Educação</option>
-          <option value="Lazer">Lazer</option>
-          <option value="Saúde">Saúde</option>
-          <option value="Cartão de Crédito">Cartão de Crédito</option>
-          <option value="Outros">Outros</option>
-        </select>
-      </div>
+          <div class="campo-form">
+            <label for="tipo">Natureza da movimentação</label>
+            <select name="tipo" id="tipo" required>
+              <option value="entrada">Entrada</option>
+              <option value="saida">Saída</option>
+              <option value="salario">Salário</option>
+              <option value="recebimento">Recebimento</option>
+              <option value="divida">Dívida</option>
+              <option value="conta">Conta Fixa</option>
+            </select>
+          </div>
 
-      <div class="campo-form">
-        <label for="vencimento">Vencimento</label>
-        <input type="date" name="vencimento" id="vencimento" />
-      </div>
+          <div class="campo-form">
+            <label for="descricao">Descrição da movimentação</label>
+            <input type="text" name="descricao" id="descricao" required />
+          </div>
 
-      <div class="campo-form">
-        <label for="parcelas">Parcelas</label>
-        <select name="parcelas" id="parcelas">
-          {% for i in range(1, 13) %}
-          <option value="{{ i }}">{{ i }}x</option>
+          <div class="campo-form">
+            <label for="valor">Valor (R$)</label>
+            <input type="number" step="0.01" name="valor" id="valor" required placeholder="Ex: 199.90" />
+          </div>
+
+          <div class="campo-form">
+            <label for="categoria">Categoria</label>
+            <select name="categoria" id="categoria">
+              <option value="">Selecione</option>
+              <option value="Moradia">Moradia</option>
+              <option value="Alimentação">Alimentação</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Educação">Educação</option>
+              <option value="Lazer">Lazer</option>
+              <option value="Saúde">Saúde</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+
+          <div class="campo-form">
+            <label for="vencimento">Vencimento</label>
+            <input type="date" name="vencimento" id="vencimento" />
+            <small class="campo-ajuda">Data esperada para pagamento (opcional).</small>
+          </div>
+
+          <div class="campo-form" id="parcelas-container">
+            <label for="parcelas">Parcelas</label>
+            <select name="parcelas" id="parcelas">
+              {% for i in range(1, 13) %}
+              <option value="{{ i }}">{{ i }}x</option>
+              {% endfor %}
+            </select>
+            <small class="campo-ajuda">Use apenas para compras parceladas no cartão.</small>
+          </div>
+
+          <div class="checkbox-form">
+            <input type="checkbox" name="recorrente" id="recorrente" />
+            <label for="recorrente">Repete todo mês</label>
+          </div>
+
+          <button type="submit" class="botao-principal">Salvar lançamento</button>
+        </form>
+      </section>
+      {% endif %}
+
+      {% if active_tab in ['lancamentos', 'relatorios'] %}
+      <section class="glass-card section-block" aria-labelledby="filtros-title" data-tab-panel="lancamentos dashboard relatorios">
+        <div class="section-head-inline">
+          <h2 id="filtros-title">Filtros rápidos</h2>
+          <p>Refine os lançamentos por período e busca textual.</p>
+        </div>
+        <div class="filtros-rapidos" role="group" aria-label="Filtros de período">
+          <button class="chip-filtro" data-periodo="hoje" type="button">Hoje</button>
+          <button class="chip-filtro" data-periodo="7dias" type="button">7 dias</button>
+          <button class="chip-filtro" data-periodo="mes" type="button">Mês</button>
+          <button class="chip-filtro" data-periodo="todos" type="button">Todos</button>
+        </div>
+        <div class="campo-form busca-lancamentos">
+          <label for="busca-lancamentos">Buscar por descrição ou categoria</label>
+          <input type="text" id="busca-lancamentos" placeholder="Ex.: mercado, transporte, salário" />
+        </div>
+      </section>
+      {% endif %}
+
+      {% if active_tab == 'relatorios' %}
+      <section class="glass-card section-block" data-tab-panel="relatorios">
+        <div class="section-head-inline">
+          <h2>Exportação de dados</h2>
+          <p>Baixe os lançamentos do período atual em CSV.</p>
+        </div>
+        <a class="botao-tema exportar-csv-btn" href="/relatorios/export/csv?inicio={{ data_inicio }}&fim={{ data_fim }}&tipo={{ filtro_tipo }}">Exportar CSV</a>
+      </section>
+      {% endif %}
+
+      {% if active_tab in ['dashboard', 'visao_geral'] %}
+      {% if dados %}
+      <section class="valor-boxes" aria-label="Resumo financeiro" data-tab-panel="dashboard">
+        <div class="valor-box">Entradas: R$ {{ '%.2f'|format(entrada) }}</div>
+        <div class="valor-box">Saídas: R$ {{ '%.2f'|format(saida) }}</div>
+        <div class="valor-box">Saldo: R$ {{ '%.2f'|format(saldo) }}</div>
+      </section>
+      {% else %}
+      <section class="glass-card section-block" data-tab-panel="dashboard">
+        <div class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <h3>Nenhum lançamento ainda</h3>
+          <p>Comece registrando sua primeira movimentação financeira para ver seu resumo aqui.</p>
+          <a href="/lancamentos" class="botao-principal">Criar primeiro lançamento</a>
+        </div>
+      </section>
+      {% endif %}
+      {% endif %}
+
+      {% if active_tab in ['dashboard', 'relatorios', 'visao_geral'] and dados %}
+      <section class="glass-card section-block" aria-labelledby="chart-title" data-tab-panel="dashboard relatorios">
+        <div class="section-head-inline">
+          <h2 id="chart-title">Resumo visual</h2>
+          <p>Comparativo por operação e gastos por categoria.</p>
+        </div>
+        <div class="graficos-grid">
+          <div class="chart-wrap"><canvas id="graficoResumo" aria-label="Resumo por operação" role="img"></canvas></div>
+          <div class="chart-wrap"><canvas id="graficoCategoria" aria-label="Gastos por categoria" role="img"></canvas></div>
+        </div>
+      </section>
+
+      <section class="glass-card section-block" data-tab-panel="dashboard">
+        <div class="section-head-inline">
+          <h2>📈 Gastos do mês</h2>
+          <p>Acompanhe seus gastos acumulados dia a dia.</p>
+        </div>
+        <div class="chart-wrap"><canvas id="graficoSpending" aria-label="Gastos acumulados do mês" role="img"></canvas></div>
+      </section>
+      {% endif %}
+
+      {% if active_tab == 'dashboard' and assinaturas %}
+      <section class="glass-card section-block">
+        <div class="section-head-inline">
+          <h2 aria-label="Assinaturas detectadas">🔄 Assinaturas</h2>
+          <p>Gastos recorrentes detectados. Total: R$ {{ '%.2f'|format(assinaturas_total) }}/mês</p>
+        </div>
+        <div class="assinaturas-list">
+          {% for s in assinaturas %}
+          <div class="assinatura-item">
+            <span class="assinatura-emoji">{{ categorias_emoji.get(s.get('categoria',''), '📦') if s.get('categoria') else '📦' }}</span>
+            <span class="assinatura-desc">{{ s.descricao }}</span>
+            <span class="assinatura-valor">R$ {{ '%.2f'|format(s.valor) }}</span>
+          </div>
           {% endfor %}
-        </select>
-      </div>
+        </div>
+      </section>
+      {% endif %}
 
-      <div class="checkbox-form">
-        <input type="checkbox" name="recorrente" id="recorrente" />
-        <label for="recorrente">Recorrente</label>
-      </div>
+      {% if active_tab == 'dashboard' %}
+      <section class="glass-card section-block" id="insights-section">
+        <div class="section-head-inline">
+          <h2>🧠 Insights inteligentes</h2>
+          <p>Análise automática dos seus gastos.</p>
+        </div>
+        <div id="insights-list"><p class="empty-hint">Carregando insights...</p></div>
+      </section>
 
-      <button type="submit" class="botao-principal">Adicionar</button>
-    </form>
+      <section class="glass-card section-block" id="projecao-section">
+        <div class="section-head-inline">
+          <h2>🔮 Projeção do mês</h2>
+          <p>Estimativa de saldo no fim do mês.</p>
+        </div>
+        <div id="projecao-content"><p class="empty-hint">Calculando...</p></div>
+      </section>
+      {% endif %}
 
-    <div class="valor-boxes">
-      <div class="valor-box">Entradas: R$ {{ '%.2f'|format(entrada) }}</div>
-      <div class="valor-box">Saídas: R$ {{ '%.2f'|format(saida) }}</div>
-      <div class="valor-box">Saldo: R$ {{ '%.2f'|format(saldo) }}</div>
-    </div>
-
-    <canvas id="graficoResumo" height="100"></canvas>
-
-    <div class="glass-card">
-      <h2>Lançamentos</h2>
-      <table class="tabela-glass">
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Tipo</th>
-            <th>Descrição</th>
-            <th>Valor</th>
-            <th>Categoria</th>
-            <th>Vencimento</th>
-            <th>Recorrente</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in dados %}
-          <tr>
-            <td>{{ item.data }}</td>
-            <td>{{ item.tipo }}</td>
-            <td>{{ item.descricao }}</td>
-            <td>R$ {{ '%.2f'|format(item.valor | float) }}</td>
-            <td>{{ item.categoria }}</td>
-            <td>{{ item.vencimento or '' }}</td>
-            <td>{{ 'Sim' if item.recorrente else 'Não' }}</td>
-            <td>
-              <button class="editar" data-id="{{ item.id }}">✏️</button>
-              <button class="excluir" data-id="{{ item.id }}">🗑️</button>
-            </td>
-          </tr>
+      {% if active_tab == 'dashboard' and alertas_vencimento %}
+      <section class="glass-card section-block alertas-section">
+        <div class="section-head-inline">
+          <h2 aria-label="Alertas de vencimento">⚠️ Vencimentos próximos</h2>
+          <p>Contas que vencem nos próximos 7 dias.</p>
+        </div>
+        <div class="alertas-list">
+          {% for a in alertas_vencimento %}
+          <div class="alerta-item">
+            <span class="alerta-desc">{{ a.descricao }}</span>
+            <span class="alerta-cat">{{ a.categoria }}</span>
+            <span class="alerta-valor">R$ {{ '%.2f'|format(a.valor | float) }}</span>
+            <span class="alerta-data">{{ a.vencimento }}</span>
+          </div>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
+        </div>
+      </section>
+      {% endif %}
 
-    {% if contas_fixas %}
-    <div class="glass-card">
-      <h2>📌 Contas Fixas Ativas</h2>
-      <ul class="lista-destaque">
-        {% for conta in contas_fixas %}
-        <li>{{ conta.descricao }} - R$ {{ '%.2f'|format(conta.valor) }} ({{ conta.categoria }}) - todo dia {{ conta.dia_vencimento }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
+      {% if active_tab == 'dashboard' %}
+      <section class="glass-card section-block" id="orcamentos-section">
+        <div class="section-head-inline" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h2>📊 Orçamentos do mês</h2>
+            <p>Controle seus limites por categoria.</p>
+          </div>
+          <button type="button" id="btn-novo-orcamento" class="botao-tema" style="white-space:nowrap;">+ Orçamento</button>
+        </div>
+        {% if orcamentos %}
+        <div class="orcamentos-grid">
+          {% for o in orcamentos %}
+          <div class="orcamento-card">
+            <div class="orcamento-header">
+              <span class="orcamento-cat">{{ categorias_emoji.get(o.categoria, '📁') }} {{ o.categoria }}</span>
+              <button class="excluir-orcamento" data-id="{{ o.id }}" aria-label="Excluir orçamento">✕</button>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill {% if o.percentual > 100 %}progress-over{% elif o.percentual > 80 %}progress-warn{% endif %}" style="width: {{ [o.percentual, 100] | min }}%"></div>
+            </div>
+            <div class="orcamento-valores">
+              <span>R$ {{ '%.0f'|format(o.gasto) }} / R$ {{ '%.0f'|format(o.limite) }}</span>
+              <span class="{% if o.percentual > 100 %}text-red{% elif o.percentual > 80 %}text-orange{% else %}text-green{% endif %}">{{ o.percentual }}%</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-hint">Nenhum orçamento definido. Crie um para controlar seus gastos por categoria.</p>
+        {% endif %}
+      </section>
 
-    {% if parcelas_futuras %}
-    <div class="glass-card">
-      <h2>💳 Parcelamentos Futuros</h2>
-      <ul class="lista-destaque">
-        {% for p in parcelas_futuras %}
-        <li>{{ p.descricao }} - Parcela {{ p.parcela_atual }}/{{ p.total_parcelas }} - R$ {{ '%.2f'|format(p.valor) }} (vence em {{ p.vencimento }})</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
+      <section class="glass-card section-block" id="metas-section">
+        <div class="section-head-inline" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h2>🎯 Metas financeiras</h2>
+            <p>Acompanhe o progresso dos seus objetivos.</p>
+          </div>
+          <button type="button" id="btn-nova-meta" class="botao-tema" style="white-space:nowrap;">+ Meta</button>
+        </div>
+        {% if metas %}
+        <div class="metas-grid">
+          {% for m in metas %}
+          <div class="meta-card">
+            <div class="meta-header">
+              <span class="meta-emoji">{{ m.emoji }}</span>
+              <span class="meta-nome">{{ m.nome }}</span>
+              <button class="excluir-meta" data-id="{{ m.id }}" aria-label="Excluir meta">✕</button>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill progress-meta" style="width: {{ [m.percentual, 100] | min }}%"></div>
+            </div>
+            <div class="meta-valores">
+              <span>R$ {{ '%.0f'|format(m.valor_atual) }} / R$ {{ '%.0f'|format(m.valor_alvo) }}</span>
+              <span>{{ m.percentual }}%</span>
+            </div>
+            {% if m.prazo %}<small class="meta-prazo">Prazo: {{ m.prazo }}</small>{% endif %}
+            <button class="botao-deposito" data-id="{{ m.id }}" type="button">+ Depositar</button>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-hint">Nenhuma meta criada. Defina objetivos para acompanhar seu progresso.</p>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {% if active_tab == 'dashboard' %}
+      <section class="glass-card section-block" id="open-finance-section">
+        <div class="section-head-inline" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h2>🏦 Contas bancárias</h2>
+            <p>Conecte seus bancos via Open Finance para sincronizar automaticamente.</p>
+          </div>
+          <button type="button" id="btn-conectar-banco" class="botao-tema" style="white-space:nowrap;">+ Conectar banco</button>
+        </div>
+        <div id="conexoes-list"></div>
+      </section>
+      {% endif %}
+
+      {% if active_tab == 'lancamentos' %}
+      <section class="glass-card section-block" aria-labelledby="table-title" data-tab-panel="lancamentos dashboard">
+        <div class="section-head-inline">
+          <h2 id="table-title">Lançamentos</h2>
+          <p id="table-count" aria-live="polite"></p>
+        </div>
+        <div class="table-wrapper">
+          <table class="tabela-glass" aria-label="Tabela de lançamentos financeiros">
+            <thead>
+              <tr>
+                <th><button class="th-sort" data-sort="data" type="button">Data</button></th>
+                <th><button class="th-sort" data-sort="tipo" type="button">Tipo</button></th>
+                <th><button class="th-sort" data-sort="descricao" type="button">Descrição</button></th>
+                <th><button class="th-sort" data-sort="valor" type="button">Valor</button></th>
+                <th><button class="th-sort" data-sort="categoria" type="button">Categoria</button></th>
+                <th>Vencimento</th>
+                <th>Recorrente</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-lancamentos-body">
+              {% for item in dados %}
+              <tr data-data="{{ item.data }}" data-tipo="{{ item.tipo }}" data-descricao="{{ item.descricao }}" data-categoria="{{ item.categoria }}" data-valor="{{ item.valor | float }}">
+                <td class="col-data">{{ item.data }}</td>
+                <td class="col-tipo">{{ item.tipo }}</td>
+                <td class="col-descricao">{{ item.descricao }}</td>
+                <td class="col-valor">R$ {{ '%.2f'|format(item.valor | float) }}</td>
+                <td class="col-categoria">{{ item.categoria }}</td>
+                <td class="col-vencimento">{{ item.vencimento or '' }}</td>
+                <td>{{ 'Sim' if item.recorrente else 'Não' }}</td>
+                <td>
+                  <button class="editar" data-id="{{ item.id }}" aria-label="Editar lançamento">✏️</button>
+                  <button class="excluir" data-id="{{ item.id }}" aria-label="Excluir lançamento">🗑️</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p id="table-empty" class="table-empty" hidden>Nenhum lançamento encontrado para os filtros selecionados.</p>
+        <div class="paginacao" id="paginacao"></div>
+      </section>
+      {% endif %}
+
+      {% if active_tab == 'lancamentos' and contas_fixas %}
+      <section class="glass-card section-block">
+        <h2 aria-label="Contas fixas ativas">📌 Contas Fixas Ativas</h2>
+        <ul class="lista-destaque">
+          {% for conta in contas_fixas %}
+          <li>{{ conta.descricao }} - R$ {{ '%.2f'|format(conta.valor | float) }} ({{ conta.categoria }}){% if conta.vencimento %} - vence em {{ conta.vencimento }}{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if active_tab == 'lancamentos' and parcelas_futuras %}
+      <section class="glass-card section-block">
+        <h2 aria-label="Parcelamentos futuros">💳 Parcelamentos Futuros</h2>
+        <ul class="lista-destaque">
+          {% for p in parcelas_futuras %}
+          <li>{{ p.descricao }} - Parcela {{ p.parcela_atual }}/{{ p.parcelas }} - R$ {{ '%.2f'|format(p.valor | float) }}{% if p.vencimento %} (vence em {{ p.vencimento }}){% endif %}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      <section id="modal-edicao" class="modal" aria-hidden="true" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+        <div class="modal__backdrop" data-close-modal="true"></div>
+        <div class="modal__content glass-card">
+          <header class="modal__header">
+            <h2 id="modal-title">Editar lançamento</h2>
+            <button type="button" id="fechar-modal" class="botao-tema" aria-label="Fechar modal">Fechar</button>
+          </header>
+
+          <form id="form-edicao" class="formulario" novalidate>
+            <input type="hidden" id="edit-id" />
+
+            <div class="campo-form">
+              <label for="edit-data">Data</label>
+              <input type="date" id="edit-data" required />
+            </div>
+
+            <div class="campo-form">
+              <label for="edit-tipo">Tipo</label>
+              <select id="edit-tipo" required>
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+                <option value="salario">Salário</option>
+                <option value="recebimento">Recebimento</option>
+                <option value="divida">Dívida</option>
+                <option value="conta">Conta Fixa</option>
+              </select>
+            </div>
+
+            <div class="campo-form">
+              <label for="edit-descricao">Descrição</label>
+              <input type="text" id="edit-descricao" required />
+            </div>
+
+            <div class="campo-form">
+              <label for="edit-valor">Valor</label>
+              <input type="number" step="0.01" id="edit-valor" required />
+            </div>
+
+            <div class="campo-form">
+              <label for="edit-categoria">Categoria</label>
+              <select id="edit-categoria">
+                <option value="">Selecione</option>
+                <option value="Moradia">Moradia</option>
+                <option value="Alimentação">Alimentação</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Educação">Educação</option>
+                <option value="Lazer">Lazer</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+
+            <div class="campo-form">
+              <label for="edit-vencimento">Vencimento</label>
+              <input type="date" id="edit-vencimento" />
+            </div>
+
+            <div class="campo-form" id="edit-parcelas-container">
+              <label for="edit-parcelas">Parcelas</label>
+              <select id="edit-parcelas">
+                {% for i in range(1, 13) %}
+                <option value="{{ i }}">{{ i }}x</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="checkbox-form">
+              <input type="checkbox" id="edit-recorrente" />
+              <label for="edit-recorrente">Recorrente</label>
+            </div>
+
+            <div class="modal-acoes">
+              <button type="button" id="cancelar-edicao" class="botao-tema">Cancelar</button>
+              <button type="submit" class="botao-principal" id="salvar-edicao">Salvar alterações</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="confirm-exclusao" class="modal" aria-hidden="true" role="dialog" aria-labelledby="confirm-title" aria-modal="true">
+        <div class="modal__backdrop" data-close-confirm="true"></div>
+        <div class="modal__content glass-card">
+          <header class="modal__header">
+            <h2 id="confirm-title">Confirmar exclusão</h2>
+            <button type="button" id="fechar-confirm" class="botao-tema" aria-label="Fechar">Fechar</button>
+          </header>
+          <p id="confirm-texto">Tem certeza que deseja excluir este lançamento?</p>
+          <div class="modal-acoes">
+            <button type="button" id="cancelar-exclusao" class="botao-tema">Cancelar</button>
+            <button type="button" id="confirmar-exclusao" class="botao-principal">Excluir</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="modal-perfil" class="modal" aria-hidden="true" role="dialog" aria-labelledby="perfil-title" aria-modal="true">
+        <div class="modal__backdrop" data-close-perfil="true"></div>
+        <div class="modal__content glass-card">
+          <header class="modal__header">
+            <h2 id="perfil-title">Editar perfil</h2>
+            <button type="button" id="fechar-perfil" class="botao-tema" aria-label="Fechar modal">Fechar</button>
+          </header>
+
+          <form id="form-perfil" class="formulario" novalidate>
+            <div class="campo-form">
+              <label for="perfil-nome">Nome</label>
+              <input type="text" id="perfil-nome" name="name" value="{{ user_name }}" required />
+            </div>
+
+            <div class="campo-form">
+              <label for="perfil-apelido">Apelido</label>
+              <input type="text" id="perfil-apelido" name="nickname" value="{{ user_nickname }}" />
+            </div>
+
+            <div class="campo-form">
+              <label for="perfil-email">Email</label>
+              <input type="email" id="perfil-email" name="email" value="{{ user_email }}" required />
+            </div>
+
+            <div class="campo-form">
+              <label for="perfil-senha">Nova senha (opcional)</label>
+              <input type="password" id="perfil-senha" name="password" minlength="8" />
+            </div>
+
+            <div class="campo-form">
+              <label for="perfil-avatar">Foto do avatar</label>
+              <input type="file" id="perfil-avatar" name="avatar" accept="image/png,image/jpeg,image/webp" />
+              <small class="campo-ajuda">Formatos aceitos: PNG, JPG, JPEG, WEBP.</small>
+            </div>
+
+            <div class="modal-acoes">
+              <button type="button" id="cancelar-perfil" class="botao-tema">Cancelar</button>
+              <button type="submit" class="botao-principal" id="salvar-perfil">Salvar perfil</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="modal-orcamento" class="modal" aria-hidden="true" role="dialog" aria-labelledby="orcamento-title" aria-modal="true">
+        <div class="modal__backdrop" data-close-orcamento="true"></div>
+        <div class="modal__content glass-card">
+          <header class="modal__header">
+            <h2 id="orcamento-title">Novo orçamento</h2>
+            <button type="button" class="botao-tema fechar-orcamento" aria-label="Fechar">Fechar</button>
+          </header>
+          <form id="form-orcamento" class="formulario" style="grid-template-columns:1fr 1fr;" novalidate>
+            <div class="campo-form">
+              <label for="orc-categoria">Categoria</label>
+              <select id="orc-categoria" required>
+                <option value="Moradia">Moradia</option>
+                <option value="Alimentação">Alimentação</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Educação">Educação</option>
+                <option value="Lazer">Lazer</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="campo-form">
+              <label for="orc-limite">Limite mensal (R$)</label>
+              <input type="number" step="0.01" id="orc-limite" required placeholder="Ex: 800.00" />
+            </div>
+            <div class="modal-acoes">
+              <button type="button" class="botao-tema fechar-orcamento">Cancelar</button>
+              <button type="submit" class="botao-principal" style="grid-column:auto;">Salvar</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="modal-meta" class="modal" aria-hidden="true" role="dialog" aria-labelledby="meta-title" aria-modal="true">
+        <div class="modal__backdrop" data-close-meta="true"></div>
+        <div class="modal__content glass-card">
+          <header class="modal__header">
+            <h2 id="meta-title">Nova meta</h2>
+            <button type="button" class="botao-tema fechar-meta" aria-label="Fechar">Fechar</button>
+          </header>
+          <form id="form-meta" class="formulario" style="grid-template-columns:auto 1fr 1fr;" novalidate>
+            <div class="campo-form">
+              <label for="meta-emoji">Emoji</label>
+              <input type="text" id="meta-emoji" value="🎯" maxlength="4" style="max-width:70px;text-align:center;" />
+            </div>
+            <div class="campo-form">
+              <label for="meta-nome">Nome da meta</label>
+              <input type="text" id="meta-nome" required placeholder="Ex: Viagem Europa" />
+            </div>
+            <div class="campo-form">
+              <label for="meta-valor">Valor alvo (R$)</label>
+              <input type="number" step="0.01" id="meta-valor" required placeholder="Ex: 5000.00" />
+            </div>
+            <div class="campo-form">
+              <label for="meta-prazo">Prazo</label>
+              <input type="date" id="meta-prazo" />
+            </div>
+            <div class="modal-acoes">
+              <button type="button" class="botao-tema fechar-meta">Cancelar</button>
+              <button type="submit" class="botao-principal" style="grid-column:auto;">Criar meta</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="modal-deposito" class="modal" aria-hidden="true" role="dialog" aria-labelledby="deposito-title" aria-modal="true">
+        <div class="modal__backdrop" data-close-deposito="true"></div>
+        <div class="modal__content glass-card">
+          <header class="modal__header">
+            <h2 id="deposito-title">Depositar na meta</h2>
+            <button type="button" class="botao-tema fechar-deposito" aria-label="Fechar">Fechar</button>
+          </header>
+          <form id="form-deposito" class="formulario" style="grid-template-columns:1fr;" novalidate>
+            <input type="hidden" id="deposito-meta-id" />
+            <div class="campo-form">
+              <label for="deposito-valor">Valor (R$)</label>
+              <input type="number" step="0.01" id="deposito-valor" required placeholder="Ex: 500.00" />
+            </div>
+            <div class="modal-acoes">
+              <button type="button" class="botao-tema fechar-deposito">Cancelar</button>
+              <button type="submit" class="botao-principal" style="grid-column:auto;">Depositar</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+      <button id="fab-novo" class="fab-novo" type="button" aria-label="Criar novo lançamento">＋</button>
+    </main>
   </div>
 
-  <script>
-    const entrada = {{ entrada | default(0.0) | float }};
-    const saida = {{ saida | default(0.0) | float }};
-    const saldo = {{ saldo | default(0.0) | float }};
-  </script>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script src="{{ url_for('static', filename='form.js') }}"></script>
   <script src="{{ url_for('static', filename='lancamentos.js') }}"></script>

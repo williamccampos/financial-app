@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: finanzen
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PLUGGY_CLIENT_ID
+        sync: false
+      - key: PLUGGY_CLIENT_SECRET
+        sync: false
+      - key: COOKIE_SECURE
+        value: "1"
+    disk:
+      name: finanzen-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1

@@ -1,0 +1,12 @@
+{
+  "name": "FinanZen",
+  "short_name": "FinanZen",
+  "description": "Controle financeiro inteligente",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#007aff",
+  "icons": [
+    { "src": "/static/brand/favicon-finanzen.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
